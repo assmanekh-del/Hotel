@@ -1044,13 +1044,15 @@ function App({user,onLogout}){
                     <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,color:"#6a5530"}}>{new Date(r.checkout).toLocaleDateString("fr-FR")}</p>
                     <span className="badge" style={{background:STATUS[r.status]?.bg,color:STATUS[r.status]?.color}}>{STATUS[r.status]?.label}</span>
                     <div style={{textAlign:"right"}}>
-                      {r.status!=="blocked"?(
+                      {r.status==="blocked"?(
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#9b5de5",fontWeight:600}}>🔒 Panne</p>
+                      ):r.status==="cancelled"?(
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#c95050",fontWeight:600}}>✕ Annulée</p>
+                      ):(
                         <>
                           <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:600,color:r.paid?"#2d7a4f":"#2a1e08"}}>{FMT(getEffectivePrice(r))}</p>
                           <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:r.paid?"#2d7a4f":"#c95050"}}>{r.paid?"✓ payé":"en attente"}</p>
                         </>
-                      ):(
-                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#9b5de5",fontWeight:600}}>🔒 Panne</p>
                       )}
                     </div>
                   </div>
