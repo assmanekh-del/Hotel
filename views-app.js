@@ -944,7 +944,7 @@ function App({user,onLogout}){
               </div>
 
               {/* Barre de recherche + filtres */}
-              <div style={{background:"#fff",border:"1px solid #e8ddc8",borderRadius:10,padding:"14px 18px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr auto",gap:12,alignItems:"end",boxShadow:"0 1px 4px rgba(42,30,8,0.05)"}}>
+              <div style={{background:"#fff",border:"1px solid #e8ddc8",borderRadius:10,padding:"14px 18px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr auto",gap:12,alignItems:"end",boxShadow:"0 1px 4px rgba(42,30,8,0.05)"}}>
                 {/* Recherche par nom */}
                 <div>
                   <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>🔍 Client / CIN / Email / Tél.</label>
@@ -959,14 +959,19 @@ function App({user,onLogout}){
                   <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>📅 Au (arrivée)</label>
                   <input type="date" value={filterDateTo} onChange={e=>setFilterDateTo(e.target.value)} style={{width:"100%"}}/>
                 </div>
-                {/* Statut + reset */}
-                <div style={{display:"flex",flexDirection:"column",gap:8}}>
-                  <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{width:160}}>
+                {/* Statut */}
+                <div>
+                  <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>📋 Statut</label>
+                  <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{width:"100%"}}>
                     <option value="all">Tous statuts</option>
                     {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
                   </select>
-                  <select value={filterPaid} onChange={e=>setFilterPaid(e.target.value)} style={{width:150}}>
-                    <option value="all">💳 Tous paiements</option>
+                </div>
+                {/* Paiement */}
+                <div>
+                  <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>💳 Paiement</label>
+                  <select value={filterPaid} onChange={e=>setFilterPaid(e.target.value)} style={{width:"100%"}}>
+                    <option value="all">Tous</option>
                     <option value="unpaid">⏳ Impayés</option>
                     <option value="paid">✅ Payés</option>
                   </select>
