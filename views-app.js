@@ -11,6 +11,7 @@ function App({user,onLogout}){
   const [filterStatus,setFilterStatus]=useState("all");
   const [filterDateFrom,setFilterDateFrom]=useState("");
   const [filterDateTo,setFilterDateTo]=useState("");
+  const [filterPaid,setFilterPaid]=useState("all");
   const [toast,setToast]=useState(null);
   const [devisRooms,setDevisRooms]=useState([]);
   const [devisInfo,setDevisInfo]=useState({client:"",checkin:"",checkout:"",notes:""});
@@ -237,7 +238,8 @@ function App({user,onLogout}){
     const byStatus=(filterStatus==="all"&&r.status!=="blocked")||r.status===filterStatus;
     const byDateFrom=!filterDateFrom||r.checkin>=filterDateFrom||r.checkout>filterDateFrom;
     const byDateTo=!filterDateTo||r.checkin<=filterDateTo;
-    return ms&&byStatus&&byDateFrom&&byDateTo;
+    const byPaid=filterPaid==="all"||( filterPaid==="unpaid"&&!r.paid&&!["cancelled","blocked"].includes(r.status))||(filterPaid==="paid"&&r.paid);
+    return ms&&byStatus&&byDateFrom&&byDateTo&&byPaid;
   });
 
   const css=`
@@ -963,9 +965,14 @@ function App({user,onLogout}){
                     <option value="all">Tous statuts</option>
                     {Object.entries(STATUS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
                   </select>
-                  {(search||filterDateFrom||filterDateTo||filterStatus!=="all")&&(
+                  <select value={filterPaid} onChange={e=>setFilterPaid(e.target.value)} style={{width:150}}>
+                    <option value="all">💳 Tous paiements</option>
+                    <option value="unpaid">⏳ Impayés</option>
+                    <option value="paid">✅ Payés</option>
+                  </select>
+                  {(search||filterDateFrom||filterDateTo||filterStatus!=="all"||filterPaid!=="all")&&(
                     <button className="btn-outline" style={{fontSize:11,padding:"5px 12px"}}
-                      onClick={()=>{setSearch("");setFilterDateFrom("");setFilterDateTo("");setFilterStatus("all");}}>
+                      onClick={()=>{setSearch("");setFilterDateFrom("");setFilterDateTo("");setFilterStatus("all");setFilterPaid("all");}}>
                       ✕ Réinitialiser
                     </button>
                   )}
@@ -1002,9 +1009,9 @@ function App({user,onLogout}){
                     {[
                       {k:"CA Total",v:bilan.revenus.toFixed(3),icon:"💰",c:"#2a1e08"},
                       {k:"Encaissé",v:bilan.encaisse.toFixed(3),icon:"✅",c:"#2d7a4f"},
-                      {k:"En attente",v:(bilan.revenus-bilan.encaisse).toFixed(3),icon:"⏳",c:"#c95050"},
-                    ].map(({k,v,icon,c})=>(
-                      <div key={k} style={{background:"rgba(255,255,255,0.7)",borderRadius:8,padding:"10px 12px",border:"1px solid "+border}}>
+                      {k:"En attente",v:(bilan.revenus-bilan.encaisse).toFixed(3),icon:"⏳",c:"#c95050",action:true},
+                    ].map(({k,v,icon,c,action})=>(
+                      <div key={k} onClick={action?()=>{setView("reservations");setFilterPaid("unpaid");}:undefined} style={{background:"rgba(255,255,255,0.7)",borderRadius:8,padding:"10px 12px",border:"1px solid "+border,cursor:action?"pointer":"default"}}>
                         <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:color,textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>{icon} {k}</p>
                         <p style={{fontFamily:'"Cormorant Garamond",serif',fontSize:18,fontWeight:700,color:c,lineHeight:1}}>{v}</p>
                         <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,color:"#8a7040",marginTop:2}}>TND</p>
