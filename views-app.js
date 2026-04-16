@@ -987,27 +987,42 @@ function App({user,onLogout}){
                     </div>
                     <span style={{fontSize:22}}>{label.includes("Semaine")?"📅":"📆"}</span>
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10}}>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:10}}>
                     {[
-                      {k:"Réservations",v:bilan.count,unit:""},
-                      {k:"Chambres",v:bilan.chambres,unit:""},
-                      {k:"Revenus",v:bilan.revenus.toFixed(3),unit:"TND"},
-                      {k:"Encaissé",v:bilan.encaisse.toFixed(3),unit:"TND"},
-                    ].map(({k,v,unit})=>(
+                      {k:"Réservations",v:bilan.count,unit:"",icon:"🛎"},
+                      {k:"Chambres",v:bilan.chambres,unit:"",icon:"🚪"},
+                    ].map(({k,v,unit,icon})=>(
                       <div key={k} style={{background:"rgba(255,255,255,0.7)",borderRadius:8,padding:"10px 12px",border:"1px solid "+border}}>
-                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:color,textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>{k}</p>
-                        <p style={{fontFamily:'"Cormorant Garamond",serif',fontSize:20,fontWeight:700,color:"#2a1e08",lineHeight:1}}>{v}</p>
-                        {unit&&<p style={{fontFamily:'"Jost",sans-serif',fontSize:9,color:"#8a7040",marginTop:2}}>{unit}</p>}
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:color,textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>{icon} {k}</p>
+                        <p style={{fontFamily:'"Cormorant Garamond",serif',fontSize:22,fontWeight:700,color:"#2a1e08",lineHeight:1}}>{v}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+                    {[
+                      {k:"CA Total",v:bilan.revenus.toFixed(3),icon:"💰",c:"#2a1e08"},
+                      {k:"Encaissé",v:bilan.encaisse.toFixed(3),icon:"✅",c:"#2d7a4f"},
+                      {k:"En attente",v:(bilan.revenus-bilan.encaisse).toFixed(3),icon:"⏳",c:"#c95050"},
+                    ].map(({k,v,icon,c})=>(
+                      <div key={k} style={{background:"rgba(255,255,255,0.7)",borderRadius:8,padding:"10px 12px",border:"1px solid "+border}}>
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:color,textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>{icon} {k}</p>
+                        <p style={{fontFamily:'"Cormorant Garamond",serif',fontSize:18,fontWeight:700,color:c,lineHeight:1}}>{v}</p>
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,color:"#8a7040",marginTop:2}}>TND</p>
                       </div>
                     ))}
                   </div>
                   {bilan.revenus>0&&(
-                    <div style={{marginTop:10,background:"rgba(255,255,255,0.5)",borderRadius:6,padding:"7px 12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-                      <span style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:color,fontWeight:600}}>
-                        Taux d'encaissement : {Math.round(bilan.encaisse/bilan.revenus*100)}%
-                      </span>
-                      <div style={{flex:1,margin:"0 12px",height:6,background:"rgba(0,0,0,0.08)",borderRadius:3,overflow:"hidden"}}>
-                        <div style={{height:"100%",width:Math.round(bilan.encaisse/bilan.revenus*100)+"%",background:color,borderRadius:3,transition:"width .4s"}}/>
+                    <div style={{marginTop:10,background:"rgba(255,255,255,0.5)",borderRadius:6,padding:"7px 12px"}}>
+                      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                        <span style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:color,fontWeight:600}}>
+                          Taux d'encaissement : {Math.round(bilan.encaisse/bilan.revenus*100)}%
+                        </span>
+                        <span style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#c95050"}}>
+                          {(bilan.revenus-bilan.encaisse).toFixed(3)} TND restants
+                        </span>
+                      </div>
+                      <div style={{height:8,background:"rgba(0,0,0,0.08)",borderRadius:4,overflow:"hidden"}}>
+                        <div style={{height:"100%",width:Math.round(bilan.encaisse/bilan.revenus*100)+"%",background:"#2d7a4f",borderRadius:4,transition:"width .4s"}}/>
                       </div>
                     </div>
                   )}
