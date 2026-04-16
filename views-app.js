@@ -1936,7 +1936,7 @@ function App({user,onLogout}){
                   {r.status==="checkedin"&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"checkedout");setModal({type:"detail",data:{...r,status:"checkedout"}});}}>Check-out ✓</button>}
                   {!["cancelled","blocked","checkedout"].includes(r.status)&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"cancelled");setModal({type:"detail",data:{...r,status:"cancelled"}});}}>Annuler</button>}
                   {!r.paid&&r.status!=="blocked"&&<button className="btn-outline" onClick={()=>{markPaid(r.id);setModal({type:"detail",data:{...r,paid:true}});}}>Marquer payé</button>}
-                  {r.status!=="blocked"&&<button className="btn-outline" onClick={()=>openInvoice(r)}>Facture</button>}
+                  {!["blocked","cancelled"].includes(r.status)&&<button className="btn-outline" onClick={()=>openInvoice(r)}>Facture</button>}
                   {r.pension==="dp"&&["confirmed","checkedin"].includes(r.status)&&<button className="btn-outline" style={{background:"#fff8ee",borderColor:"#e8b84b",color:"#8a5c10"}} onClick={()=>setModal({type:"bonRestaurant",data:r})}>🍽 Bon Restaurant</button>}
                 </div>
                 <div style={{display:"flex",justifyContent:"space-between"}}>
