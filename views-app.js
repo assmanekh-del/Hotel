@@ -701,7 +701,6 @@ function App({user,onLogout}){
 
           // Pour chaque chambre et chaque jour : trouver si occupée
           function getStatus(roomId, dateStr){
-            // Cas départ ce jour : checkout = dateStr uniquement pour réservations actives
             const resDepart=reservations.find(r=>
               r.roomId===roomId&&
               ["confirmed","checkedin"].includes(r.status)&&
@@ -715,6 +714,7 @@ function App({user,onLogout}){
               r.checkin<=dateStr&&r.checkout>dateStr
             );
             if(!res) return null;
+            if(res.groupeId) return "groupe";
             return res.status;
           }
 
@@ -725,6 +725,7 @@ function App({user,onLogout}){
             blocked:"#6b35b8",
             checkedout:"#7a9a7a",
             depart:"#e05a20",
+            groupe:"#0f7a6b",
           };
           const STATUS_BG={
             confirmed:"#fef3d0",
@@ -733,6 +734,7 @@ function App({user,onLogout}){
             blocked:"#ead4f8",
             checkedout:"#e8f0e8",
             depart:"#fde8e0",
+            groupe:"#d0f0eb",
           };
 
           return(
@@ -864,7 +866,7 @@ function App({user,onLogout}){
                                       }}>
                                         {isStart&&res?.guest&&(
                                           <span style={{fontSize:8,color:"#fff",fontWeight:700,paddingLeft:3,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",fontFamily:'"Jost",sans-serif'}}>
-                                            {res.guest.split(" ")[0]}
+                                            {res.groupeId?"🏢 ":""}{res.guest.split(" ")[0]}
                                           </span>
                                         )}
                                       </div>

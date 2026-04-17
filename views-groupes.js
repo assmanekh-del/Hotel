@@ -30,6 +30,20 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
     setLoading(false);
   }
 
+  async function supprimerGroupe(groupe){
+    if(!confirm(`Supprimer le groupe "${groupe.nom_societe}" et toutes ses réservations ?\n\nCette action est irréversible.`)) return;
+    try{
+      await sb.from('reservations').delete().eq('groupe_id',groupe.id);
+      await sb.from('groupes').delete().eq('id',groupe.id);
+      setReservations(prev=>prev.filter(r=>r.groupeId!==groupe.id));
+      setGroupes(prev=>prev.filter(g=>g.id!==groupe.id));
+      setModal(null);
+      showToast('Groupe supprimé ✓','success');
+    }catch(e){
+      showToast('Erreur : '+e.message,'error');
+    }
+  }
+
   // ── Chambres disponibles pour les dates ──
   function chambresDisponibles(){
     if(!form.checkin||!form.checkout) return ROOMS;
@@ -147,25 +161,28 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
   async function factureGroupee(groupe){
     const resas = resasGroupe(groupe.id);
     if(resas.length===0){showToast("Aucune réservation dans ce groupe","error");return;}
-    const n = Math.max(0,(new Date(groupe.checkout)-new Date(groupe.checkin))/86400000);
     const lignes = resas.map(r=>{
       const room = ROOMS.find(rm=>rm.id===r.roomId);
       const TARIFS={single:100,double:160,triple:220,quad:280,suite:200};
       const typeMap={Single:"single",Double:"double",Twin:"double",Triple:"triple",Suite:"suite"};
       const prix = r.customPrice!==undefined?r.customPrice:
         Math.round((TARIFS[r.billingType||(typeMap[room?.type]||"double")]||160)*(1-(r.remise||0)/100)*100)/100;
-      return {code:"", desc:`Ch. ${room?.number||"?"} (${room?.type||""}) × ${n} nuit${n>1?"s":""}`, qty:n, prixTTC:prix};
+      const nuits = Math.max(0,(new Date(r.checkout)-new Date(r.checkin))/86400000);
+      return {code:"", desc:`Ch. ${room?.number||"?"} (${room?.type||""}) — ${new Date(r.checkin).toLocaleDateString("fr-FR")} → ${new Date(r.checkout).toLocaleDateString("fr-FR")} — ${r.guest}`, qty:nuits, prixTTC:prix};
     });
     const grandTTC = Math.round(lignes.reduce((a,l)=>a+l.qty*l.prixTTC,0)*100)/100;
     const grandHT = Math.round((grandTTC/1.07)*100)/100;
+    const tvaAmt = Math.round((grandTTC-grandHT)*100)/100;
+    const netAPayer = Math.round((grandTTC+1)*100)/100;
+    const adresse = [groupe.bon_commande?`Bon de commande : ${groupe.bon_commande}`:""].filter(Boolean).join("\n");
     const num = await nextInvNum();
     const ok = await saveFacture({
       numero:num, type:'libre',
       client: groupe.nom_societe,
-      adresse: groupe.bon_commande?`Bon de commande : ${groupe.bon_commande}`:"",
+      adresse,
       phone:null, email:null, mf:groupe.mf||null,
-      montant_ht:grandHT, tva:Math.round((grandTTC-grandHT)*100)/100,
-      timbre:1, montant_ttc:Math.round((grandTTC+1)*100)/100,
+      montant_ht:grandHT, tva:tvaAmt,
+      timbre:1, montant_ttc:netAPayer,
       remise:0, notes:groupe.notes||null, lignes
     });
     if(ok){
@@ -173,10 +190,10 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
       doPrint({
         numero:`F-${num}`, type:'libre',
         client:groupe.nom_societe,
-        adresse:groupe.bon_commande?`Bon de commande : ${groupe.bon_commande}`:"",
-        mf:null, phone:null, cin:null, showCachet:true,
-        montant_ht:grandHT, tva:Math.round((grandTTC-grandHT)*100)/100,
-        montant_ttc:Math.round((grandTTC+1)*100)/100,
+        adresse,
+        mf:groupe.mf||null, phone:null, cin:null, showCachet:true,
+        montant_ht:grandHT, tva:tvaAmt,
+        montant_ttc:netAPayer,
         remise:0, notes:groupe.notes, lignes, created_at:new Date()
       });
     } else showToast("Erreur enregistrement","error");
@@ -548,10 +565,13 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
               {g.notes&&<div style={{background:"#fef9f0",border:"1px solid #e8d8b0",borderLeft:"3px solid #c9952a",padding:"10px 14px",borderRadius:6,marginBottom:16,fontFamily:'"Jost",sans-serif',fontSize:13,color:"#6a5530"}}>{g.notes}</div>}
 
               <div style={{display:"flex",justifyContent:"space-between",gap:8,paddingTop:12,borderTop:"1px solid #f0e8d8"}}>
-                <button className="btn-ghost" onClick={()=>setModal(null)}>Fermer</button>
-                <button className="btn-gold" onClick={()=>factureGroupee(g)}>
-                  🧾 Facture groupée
-                </button>
+                <button className="btn-red" onClick={()=>supprimerGroupe(g)}>🗑 Supprimer</button>
+                <div style={{display:"flex",gap:8}}>
+                  <button className="btn-ghost" onClick={()=>setModal(null)}>Fermer</button>
+                  <button className="btn-gold" onClick={()=>factureGroupee(g)}>
+                    🧾 Facture groupée
+                  </button>
+                </div>
               </div>
             </div>
           </div>
