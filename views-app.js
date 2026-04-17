@@ -104,9 +104,8 @@ function App({user,onLogout}){
     setModal(null);
   }
 
-  async function openFreeInvoice(){
-    const num=await nextInvNum();
-    setFreeInvoice({client:"",adresse:"",phone:"",email:"",mf:"",lines:[{code:"",desc:"",qty:1,prixTTC:0}],remise:0,notes:"",showCachet:true,invNum:num,saved:false});
+  function openFreeInvoice(){
+    setFreeInvoice({client:"",adresse:"",phone:"",email:"",mf:"",lines:[{code:"",desc:"",qty:1,prixTTC:0}],remise:0,notes:"",showCachet:true,invNum:null,saved:false});
     setModal({type:"freeInvoice"});
   }
 
@@ -153,10 +152,8 @@ function App({user,onLogout}){
   function openBlock(roomId){setForm({roomId,guest:"BLOQUÉE",email:"",phone:"",checkin:TODAY,checkout:"",adults:0,children:0,breakfast:"non",status:"blocked",paid:false,notes:"",extraBed:false,babyBed:false,babyBedLocation:"",claim:"",assignedMenage:"",pension:"lpd",billingType:null,remise:0,customPrice:undefined});setModal({type:"block"});}
   function openEdit(r){setForm({...r});setModal({type:"edit",data:r});}
   function openDetail(r){setModal({type:"detail",data:r});}
-  async function openInvoice(r){
-    const num=await nextInvNum();
-    // Annuler ce numéro réservé si on ferme sans enregistrer - on le remet
-    setModal({type:"invoice",data:r,saved:false,invNum:num});
+  function openInvoice(r){
+    setModal({type:"invoice",data:r,saved:false,invNum:null});
   }
   async function nextDevNum(){
     try{
@@ -170,9 +167,8 @@ function App({user,onLogout}){
     }catch(e){}
     return String(Math.floor(Math.random()*99999)).padStart(5,'0');
   }
-  async function openDevis(){
-    const num=await nextDevNum();
-    setDevisInfo({client:"",phone:"",checkin:"",checkout:"",notes:"",remise:0,lines:[{code:"",desc:"",qty:1,prixTTC:0}],devNum:"DEV-"+num,saved:false});
+  function openDevis(){
+    setDevisInfo({client:"",phone:"",checkin:"",checkout:"",notes:"",remise:0,lines:[{code:"",desc:"",qty:1,prixTTC:0}],devNum:null,saved:false});
     setModal({type:"devis"});
   }
 
@@ -341,6 +337,7 @@ function App({user,onLogout}){
             ["reservations","📋","Réservations"],
             ["historique","📒","Historique"],
             ["archives","📁","Archives"],
+            ["groupes","🏢","Groupes"],
             ["police","📋","Livre de Police"],
             ["contrats","🤝","Contrats"],
             ["charges","💸","Charges"],
@@ -1106,6 +1103,7 @@ function App({user,onLogout}){
 
         {/* ── ARCHIVES FACTURES ── */}
         {view==="archives"&&<ArchivesView sb={sb} openDetail={openDetail} ROOMS={ROOMS} LOGO={LOGO} G2="#8B6434" doPrint={doPrint} setModal={setModal}/>}
+        {view==="groupes"&&<GroupesView sb={sb} ROOMS={ROOMS} reservations={reservations} setReservations={setReservations} showToast={showToast} doPrint={doPrint} montantEnLettres={montantEnLettres} SignatureBlock={SignatureBlock} LOGO={LOGO} saveFacture={saveFacture} nextInvNum={nextInvNum}/>}
         {view==="police"&&<LivreDePolice reservations={reservations} ROOMS={ROOMS} LOGO={LOGO}/>}
         {view==="contrats"&&<ContratsView sb={sb}/>}
         {view==="charges"&&<ChargesView sb={sb} LOGO={LOGO}/>}
@@ -2245,7 +2243,7 @@ function App({user,onLogout}){
                       const extraTTC_S=r.extraBed?30:0;
                       const totalTTC_S=Math.round((n*prixTTC_S+n*extraTTC_S)*100)/100;
                       const totalHT_S=Math.round((totalTTC_S/1.07)*100)/100;
-                      const num=modal.invNum;
+                      const num=await nextInvNum();
                       const ok=await saveFacture({numero:num,type:'reservation',client:r.guest,phone:r.phone||null,email:r.email||null,cin:r.cin||null,reservation_id:r.id,montant_ht:totalHT_S,tva:Math.round((totalTTC_S-totalHT_S)*100)/100,timbre:1,montant_ttc:Math.round((totalTTC_S+1)*100)/100,remise:modal.remise||0,notes:r.notes||null,lignes:[{desc:"Chambre "+room?.number+" × "+n+" nuits",qty:n,prixTTC:prixTTC_S}]});
                       if(ok){setModal(m=>({...m,saved:true,invNum:num}));showToast('Facture F-'+num+' enregistrée ✓','success');}
                       else showToast('Erreur enregistrement','error');
@@ -2288,6 +2286,7 @@ function App({user,onLogout}){
               doPrint={doPrint}
               montantEnLettres={montantEnLettres}
               SignatureBlock={SignatureBlock}
+              nextInvNum={nextInvNum}
             />
           )}
 
@@ -2410,7 +2409,8 @@ function App({user,onLogout}){
                         const rem=parseFloat(di.remise)||0;
                         const remMont=Math.round(gTTC*(rem/100)*100)/100;
                         const net=Math.round((gTTC-remMont)*100)/100;
-                        const ok=await saveFacture({numero:di.devNum,type:'devis',client:di.client||null,phone:di.phone||null,montant_ht:gHT,tva:Math.round((gTTC-gHT)*100)/100,timbre:0,montant_ttc:net,remise:rem,notes:di.notes||null,lignes:di.lines});
+                        const devN=await nextDevNum();setDI(f=>({...f,devNum:"DEV-"+devN}));
+                        const ok=await saveFacture({numero:"DEV-"+devN,type:'devis',client:di.client||null,phone:di.phone||null,montant_ht:gHT,tva:Math.round((gTTC-gHT)*100)/100,timbre:0,montant_ttc:net,remise:rem,notes:di.notes||null,lignes:di.lines});
                         if(ok){setDI(f=>({...f,saved:true}));showToast(di.devNum+' enregistré ✓','success');}
                         else showToast('Erreur enregistrement','error');
                       }}>💾 Enregistrer</button>
