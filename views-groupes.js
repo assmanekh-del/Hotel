@@ -7,9 +7,10 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
 
   // ── Formulaire nouveau groupe ──
   const emptyForm = {
-    nomSociete:"", bonCommande:"", checkin:"", checkout:"",
+    nomSociete:"", bonCommande:"", mf:"", checkin:"", checkout:"",
     notes:"", chambres:[], clientsParChambre:{}, adults:1,
-    pension:"lpd", remise:0, billingType:null
+    pension:"lpd", remise:0, billingType:null,
+    datesParChambre:{}, prixParChambre:{}
   };
   const [form, setForm] = useState(emptyForm);
   const [step, setStep] = useState(1); // 1=infos groupe, 2=sélection chambres, 3=clients
@@ -42,12 +43,16 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
     });
   }
 
-  function nights(){
-    if(!form.checkin||!form.checkout) return 0;
-    return Math.max(0,(new Date(form.checkout)-new Date(form.checkin))/86400000);
+  function nights(roomId){
+    const ci = (roomId&&form.datesParChambre[roomId]?.checkin)||form.checkin;
+    const co = (roomId&&form.datesParChambre[roomId]?.checkout)||form.checkout;
+    if(!ci||!co) return 0;
+    return Math.max(0,(new Date(co)-new Date(ci))/86400000);
   }
 
   function getPrix(room){
+    if(form.prixParChambre[room.id]!==undefined&&form.prixParChambre[room.id]!=="")
+      return parseFloat(form.prixParChambre[room.id])||0;
     const TARIFS={single:100,double:160,triple:220,quad:280,suite:200};
     const typeMap={Single:"single",Double:"double",Twin:"double",Triple:"triple",Suite:"suite"};
     const base=TARIFS[form.billingType||(typeMap[room.type]||"double")]||160;
@@ -57,10 +62,9 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
   }
 
   function totalGroupe(){
-    const n=nights();
     return form.chambres.reduce((acc,roomId)=>{
       const room=ROOMS.find(r=>r.id===roomId);
-      return acc+(room?getPrix(room)*n:0);
+      return acc+(room?getPrix(room)*nights(roomId):0);
     },0);
   }
 
@@ -75,6 +79,7 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
       const {data:groupe, error:gErr} = await sb.from('groupes').insert([{
         nom_societe: form.nomSociete,
         bon_commande: form.bonCommande||null,
+        mf: form.mf||null,
         checkin: form.checkin,
         checkout: form.checkout,
         notes: form.notes||null,
@@ -84,13 +89,18 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
       // 2. Créer une réservation par chambre
       const resaInserts = form.chambres.map(roomId=>{
         const client = form.clientsParChambre[roomId]||form.nomSociete;
+        const room = ROOMS.find(r=>r.id===roomId);
+        const ci = form.datesParChambre[roomId]?.checkin||form.checkin;
+        const co = form.datesParChambre[roomId]?.checkout||form.checkout;
+        const prixCustom = form.prixParChambre[roomId]!==undefined&&form.prixParChambre[roomId]!==""
+          ? parseFloat(form.prixParChambre[roomId]) : null;
         return {
           guest: client,
           email: "",
           phone: "",
           room_id: parseInt(roomId),
-          checkin: form.checkin,
-          checkout: form.checkout,
+          checkin: ci,
+          checkout: co,
           adults: parseInt(form.adults)||1,
           status: "confirmed",
           paid: false,
@@ -103,7 +113,7 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
           children: 0,
           breakfast: "non",
           pension: form.pension||"lpd",
-          custom_price: null,
+          custom_price: prixCustom,
           billing_type: form.billingType||null,
           remise: parseFloat(form.remise)||0,
           cin: "",
@@ -153,7 +163,7 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
       numero:num, type:'libre',
       client: groupe.nom_societe,
       adresse: groupe.bon_commande?`Bon de commande : ${groupe.bon_commande}`:"",
-      phone:null, email:null, mf:null,
+      phone:null, email:null, mf:groupe.mf||null,
       montant_ht:grandHT, tva:Math.round((grandTTC-grandHT)*100)/100,
       timbre:1, montant_ttc:Math.round((grandTTC+1)*100)/100,
       remise:0, notes:groupe.notes||null, lignes
@@ -272,6 +282,21 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
                 </div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
                   <div>
+                    <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7a65",textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>
+                      Matricule Fiscale
+                      <span style={{fontSize:9,fontWeight:500,color:"#a09080",marginLeft:6,textTransform:"none"}}>facultatif</span>
+                    </label>
+                    <input value={form.mf} onChange={e=>setForm(f=>({...f,mf:e.target.value}))}
+                      placeholder="ex: 1234567A/B/C/000" style={{fontSize:13,padding:"8px 10px"}}/>
+                  </div>
+                  <div style={{display:"flex",alignItems:"flex-end",paddingBottom:2}}>
+                    <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040",fontStyle:"italic"}}>
+                      💡 Les dates et prix peuvent être ajustés par chambre à l'étape 3
+                    </p>
+                  </div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+                  <div>
                     <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7a65",textTransform:"uppercase",letterSpacing:.8,marginBottom:4}}>Arrivée *</label>
                     <input type="date" value={form.checkin} onChange={e=>setForm(f=>({...f,checkin:e.target.value,chambres:[]}))}
                       style={{fontSize:13,padding:"8px 10px"}}/>
@@ -374,18 +399,47 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
                 <div style={{display:"grid",gap:8,marginBottom:16,maxHeight:320,overflowY:"auto"}}>
                   {form.chambres.map(roomId=>{
                     const room = ROOMS.find(r=>r.id===roomId);
+                    const prixDefaut = getPrix(room);
+                    const ci = form.datesParChambre[roomId]?.checkin||form.checkin;
+                    const co = form.datesParChambre[roomId]?.checkout||form.checkout;
+                    const n = Math.max(0,(new Date(co)-new Date(ci))/86400000);
+                    const prixFinal = form.prixParChambre[roomId]!==undefined&&form.prixParChambre[roomId]!==""
+                      ? parseFloat(form.prixParChambre[roomId])||0 : prixDefaut;
                     return(
-                      <div key={roomId} style={{display:"grid",gridTemplateColumns:"80px 1fr",gap:12,alignItems:"center",padding:"8px 12px",background:"#faf8f5",borderRadius:8,border:"1px solid #e8d8b0"}}>
-                        <div>
-                          <p style={{fontFamily:'"Jost",sans-serif',fontSize:16,fontWeight:700,color:"#c9952a"}}>{room?.number}</p>
-                          <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#8a7040"}}>{room?.type}</p>
+                      <div key={roomId} style={{padding:"12px 14px",background:"#faf8f5",borderRadius:8,border:"1px solid #e8d8b0"}}>
+                        <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+                          <span style={{fontFamily:'"Jost",sans-serif',fontSize:18,fontWeight:700,color:"#c9952a",minWidth:40}}>{room?.number}</span>
+                          <span style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040"}}>{room?.type}</span>
+                          <span style={{marginLeft:"auto",fontFamily:'"Jost",sans-serif',fontSize:12,fontWeight:700,color:"#c9952a"}}>{(prixFinal*n).toFixed(3)} TND</span>
                         </div>
-                        <input
-                          value={form.clientsParChambre[roomId]||""}
-                          onChange={e=>setForm(f=>({...f,clientsParChambre:{...f.clientsParChambre,[roomId]:e.target.value}}))}
-                          placeholder={form.nomSociete||"Nom du client"}
-                          style={{fontSize:13,padding:"7px 10px"}}
-                        />
+                        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:8}}>
+                          <div style={{gridColumn:"1/-1"}}>
+                            <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7a65",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Client</label>
+                            <input value={form.clientsParChambre[roomId]||""} onChange={e=>setForm(f=>({...f,clientsParChambre:{...f.clientsParChambre,[roomId]:e.target.value}}))}
+                              placeholder={form.nomSociete||"Nom du client"} style={{fontSize:12,padding:"6px 8px",width:"100%"}}/>
+                          </div>
+                          <div>
+                            <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7a65",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Arrivée</label>
+                            <input type="date" value={ci} onChange={e=>setForm(f=>({...f,datesParChambre:{...f.datesParChambre,[roomId]:{...(f.datesParChambre[roomId]||{}),checkin:e.target.value}}}))}
+                              style={{fontSize:11,padding:"6px 8px",width:"100%"}}/>
+                          </div>
+                          <div>
+                            <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7a65",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Départ</label>
+                            <input type="date" value={co} onChange={e=>setForm(f=>({...f,datesParChambre:{...f.datesParChambre,[roomId]:{...(f.datesParChambre[roomId]||{}),checkout:e.target.value}}}))}
+                              style={{fontSize:11,padding:"6px 8px",width:"100%"}}/>
+                          </div>
+                          <div>
+                            <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7a65",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Prix/nuit TND</label>
+                            <input type="number" min="0" step="0.001"
+                              value={form.prixParChambre[roomId]!==undefined?form.prixParChambre[roomId]:prixDefaut}
+                              onChange={e=>setForm(f=>({...f,prixParChambre:{...f.prixParChambre,[roomId]:e.target.value}}))}
+                              style={{fontSize:11,padding:"6px 8px",width:"100%"}}/>
+                          </div>
+                          <div>
+                            <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7a65",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Nuits</label>
+                            <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:700,color:"#c9952a",padding:"6px 0"}}>{n}</p>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
