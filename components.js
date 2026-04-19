@@ -135,3 +135,60 @@ function SignatureBlock({showCachet=true}){
   );
 }
 
+
+function GuestAutocomplete({value, onChange, onSelect, sb}){
+  const [suggestions, setSuggestions] = React.useState([]);
+  const [show, setShow] = React.useState(false);
+  const [clients, setClients] = React.useState([]);
+
+  React.useEffect(()=>{
+    sb.from('clients').select('*').order('nom').then(({data})=>setClients(data||[]));
+  },[]);
+
+  function handleChange(e){
+    const v = e.target.value;
+    onChange(v);
+    if(v.length>=2){
+      const filtered = clients.filter(c=>
+        c.nom.toLowerCase().includes(v.toLowerCase())||
+        (c.phone||"").includes(v)||
+        (c.cin||"").includes(v)
+      );
+      setSuggestions(filtered.slice(0,6));
+      setShow(true);
+    } else {
+      setSuggestions([]);
+      setShow(false);
+    }
+  }
+
+  return(
+    <div style={{position:"relative"}}>
+      <input
+        value={value}
+        onChange={handleChange}
+        onBlur={()=>setTimeout(()=>setShow(false),200)}
+        onFocus={()=>value.length>=2&&setSuggestions(clients.filter(c=>c.nom.toLowerCase().includes(value.toLowerCase())).slice(0,6))&&setShow(true)}
+        placeholder="Nom Prénom"
+      />
+      {show&&suggestions.length>0&&(
+        <div style={{position:"absolute",top:"100%",left:0,right:0,background:"#fff",border:"1px solid #c9952a",borderRadius:6,boxShadow:"0 4px 12px rgba(0,0,0,0.1)",zIndex:200,maxHeight:220,overflowY:"auto"}}>
+          {suggestions.map(c=>(
+            <div key={c.id} onMouseDown={()=>{onSelect(c);setShow(false);}}
+              style={{padding:"8px 12px",cursor:"pointer",borderBottom:"1px solid #f5f0e8",display:"flex",justifyContent:"space-between",alignItems:"center"}}
+              onMouseEnter={e=>e.currentTarget.style.background="#fef9f0"}
+              onMouseLeave={e=>e.currentTarget.style.background="#fff"}>
+              <div>
+                <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:700,color:"#2c2416"}}>{c.nom}</p>
+                <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#8a7040"}}>
+                  {[c.phone,c.cin,c.email].filter(Boolean).join(" · ")}
+                </p>
+              </div>
+              <span style={{fontSize:10,color:"#c9952a"}}>↵</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

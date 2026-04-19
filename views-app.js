@@ -190,6 +190,26 @@ function App({user,onLogout}){
         if(error)throw error;
         showToast("Réservation mise à jour ✓");
       }
+      // ── Mémorisation automatique du client ──
+      if(form.guest&&form.guest!=="BLOQUÉE"&&modal.type!=="block"){
+        try{
+          const {data:existing}=await sb.from('clients').select('id').eq('nom',form.guest).single();
+          if(existing){
+            await sb.from('clients').update({
+              phone:form.phone||null,
+              email:form.email||null,
+              cin:form.cin||null,
+            }).eq('id',existing.id);
+          } else {
+            await sb.from('clients').insert([{
+              nom:form.guest,
+              phone:form.phone||null,
+              email:form.email||null,
+              cin:form.cin||null,
+            }]);
+          }
+        }catch(e){}
+      }
       setModal(null);
     }catch(e){showToast("Erreur lors de l'enregistrement","error");}
     finally{setSyncing(false);}
@@ -1523,7 +1543,15 @@ function App({user,onLogout}){
                   </select>
                 </div>
                 <div className="form-grid">
-                  <div className="form-group"><label>Nom du client *</label><input value={form.guest||""} onChange={e=>setForm(f=>({...f,guest:e.target.value}))} placeholder="Nom Prénom"/></div>
+                  <div className="form-group">
+                    <label>Nom du client *</label>
+                    <GuestAutocomplete
+                      value={form.guest||""}
+                      onChange={val=>setForm(f=>({...f,guest:val}))}
+                      onSelect={c=>setForm(f=>({...f,guest:c.nom,phone:c.phone||f.phone,email:c.email||f.email,cin:c.cin||f.cin}))}
+                      sb={sb}
+                    />
+                  </div>
                   <div className="form-group"><label>Email</label><input value={form.email||""} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="email@exemple.com" type="email"/></div>
                 </div>
                 <div className="form-grid">
