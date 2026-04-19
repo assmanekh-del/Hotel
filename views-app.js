@@ -6,6 +6,11 @@ function App({user,onLogout}){
   const [loading,setLoading]=useState(true);
   const [syncing,setSyncing]=useState(false);
   const [modal,setModal]=useState(null);
+  const [userRole,setUserRole]=useState(null);
+  const [showJournal,setShowJournal]=useState(false);
+  const [logs,setLogs]=useState([]);
+  const [logsLoading,setLogsLoading]=useState(false);
+  const [logsFilter,setLogsFilter]=useState("");
   const [form,setForm]=useState({});
   const [search,setSearch]=useState("");
   const [filterStatus,setFilterStatus]=useState("all");
@@ -52,6 +57,7 @@ function App({user,onLogout}){
     return String(n).padStart(5,'0');
   }
   async function saveFacture(payload){
+    addLog("🧾 Facture créée",{numero:payload.numero,client:payload.client,montant:payload.montant_ttc});
     try{
       const {error}=await sb.from('factures').insert([payload]);
       if(error) throw error;
@@ -111,6 +117,39 @@ function App({user,onLogout}){
 
   const showToast=(msg,type="success")=>setToast({msg,type});
   useEffect(()=>{if(toast){const t=setTimeout(()=>setToast(null),3500);return()=>clearTimeout(t);}},[toast]);
+
+  // ── Charger le rôle utilisateur ──
+  useEffect(()=>{
+    if(user?.id){
+      sb.from('profiles').select('role').eq('id',user.id).single()
+        .then(({data})=>setUserRole(data?.role||'receptionniste'));
+    }
+  },[user]);
+
+  // ── Ajouter un log ──
+  async function addLog(action, details={}){
+    try{
+      await sb.from('logs').insert([{
+        user_email: user?.email||'inconnu',
+        action,
+        details,
+      }]);
+    }catch(e){}
+  }
+
+  // ── Charger les logs ──
+  async function loadLogs(){
+    setLogsLoading(true);
+    try{
+      const{data}=await sb.from('logs').select('*').order('created_at',{ascending:false}).limit(200);
+      setLogs(data||[]);
+    }catch(e){}
+    setLogsLoading(false);
+  }
+
+  const filteredLogs = logsFilter
+    ? logs.filter(l=>l.action.includes(logsFilter))
+    : logs;
 
   const loadAll=useCallback(async()=>{
     try{
@@ -185,10 +224,12 @@ function App({user,onLogout}){
         const{error}=await sb.from("reservations").insert(toDb(form));
         if(error)throw error;
         showToast(modal.type==="block"?"Chambre bloquée ✓":"Réservation créée ✓");
+        addLog(modal.type==="block"?"🔒 Chambre bloquée":"✅ Réservation créée",{client:form.guest,chambre:ROOMS.find(r=>r.id==form.roomId)?.number,checkin:form.checkin,checkout:form.checkout});
       }else{
         const{error}=await sb.from("reservations").update(toDb(form)).eq("id",form.id);
         if(error)throw error;
         showToast("Réservation mise à jour ✓");
+        addLog("✏️ Réservation modifiée",{client:form.guest,chambre:ROOMS.find(r=>r.id==form.roomId)?.number,checkin:form.checkin,checkout:form.checkout});
       }
       // ── Mémorisation automatique du client ──
       if(form.guest&&form.guest!=="BLOQUÉE"&&modal.type!=="block"){
@@ -230,6 +271,8 @@ function App({user,onLogout}){
   }
 
   async function markPaid(id){
+    const r=reservations.find(x=>x.id===id);
+    addLog("💰 Paiement encaissé",{client:r?.guest,chambre:ROOMS.find(rm=>rm.id===r?.roomId)?.number,montant:r?getEffectivePrice(r):null});
     setSyncing(true);
     try{await sb.from("reservations").update({paid:true}).eq("id",id);showToast("Paiement enregistré ✓");}
     catch(e){showToast("Erreur","error");}
@@ -378,6 +421,11 @@ function App({user,onLogout}){
             {syncing?"Synchronisation...":"Connecté"}
           </span>
           <div style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#8a7040",marginBottom:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email}</div>
+          {userRole==="gerant"&&(
+            <button onClick={()=>{setShowJournal(true);loadLogs();}} style={{width:"100%",background:"#f0f4ff",border:"1px solid #c0cfee",color:"#3a5fc8",borderRadius:6,padding:"7px 0",fontSize:11,fontFamily:'"Jost",sans-serif',fontWeight:600,cursor:"pointer",letterSpacing:.5,marginBottom:6}}>
+              📋 Journal d'activité
+            </button>
+          )}
           <button onClick={onLogout} style={{width:"100%",background:"#fdf0f0",border:"1px solid #e0a0a0",color:"#9a2020",borderRadius:6,padding:"7px 0",fontSize:11,fontFamily:'"Jost",sans-serif',fontWeight:600,cursor:"pointer",letterSpacing:.5}}>
             🚪 Déconnexion
           </button>
@@ -1991,7 +2039,7 @@ function App({user,onLogout}){
                   {r.status==="pending"&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"confirmed");setModal({type:"detail",data:{...r,status:"confirmed"}});}}>Confirmer</button>}
                   {r.status==="confirmed"&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"checkedin");setModal({type:"detail",data:{...r,status:"checkedin"}});}}>Check-in ✓</button>}
                   {r.status==="checkedin"&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"checkedout");setModal({type:"detail",data:{...r,status:"checkedout"}});}}>Check-out ✓</button>}
-                  {!["cancelled","blocked","checkedout"].includes(r.status)&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"cancelled");setModal({type:"detail",data:{...r,status:"cancelled"}});}}>Annuler</button>}
+                  {!["cancelled","blocked","checkedout"].includes(r.status)&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"cancelled");addLog("🚫 Réservation annulée",{client:r.guest,chambre:ROOMS.find(rm=>rm.id===r.roomId)?.number});setModal({type:"detail",data:{...r,status:"cancelled"}});}}>Annuler</button>}
                   {!r.paid&&r.status!=="blocked"&&<button className="btn-outline" onClick={()=>{markPaid(r.id);setModal({type:"detail",data:{...r,paid:true}});}}>Marquer payé</button>}
                   {!["blocked","cancelled"].includes(r.status)&&<button className="btn-outline" onClick={()=>openInvoice(r)}>Facture</button>}
                   {r.pension==="dp"&&["confirmed","checkedin"].includes(r.status)&&<button className="btn-outline" style={{background:"#fff8ee",borderColor:"#e8b84b",color:"#8a5c10"}} onClick={()=>setModal({type:"bonRestaurant",data:r})}>🍽 Bon Restaurant</button>}
@@ -2747,5 +2795,79 @@ function App({user,onLogout}){
       })()}
       </div>{/* fin contenu principal */}
     </div>
+
+    {/* ══ PANNEAU JOURNAL D'ACTIVITÉ ══ */}
+    {showJournal&&(
+      <>
+        {/* Overlay */}
+        <div onClick={()=>setShowJournal(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.3)",zIndex:900}}/>
+        {/* Drawer */}
+        <div style={{position:"fixed",top:0,right:0,width:520,height:"100vh",background:"#fff",boxShadow:"-4px 0 24px rgba(0,0,0,0.15)",zIndex:901,display:"flex",flexDirection:"column"}}>
+          {/* Header */}
+          <div style={{padding:"20px 24px",borderBottom:"1px solid #f0e8d8",display:"flex",justifyContent:"space-between",alignItems:"center",background:"#fef9f0"}}>
+            <div>
+              <p style={{fontSize:18,fontWeight:600,color:"#2a1e08",fontFamily:'"Cormorant Garamond",serif'}}>📋 Journal d'activité</p>
+              <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040",marginTop:2}}>{logs.length} actions enregistrées</p>
+            </div>
+            <button onClick={()=>setShowJournal(false)} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#8a7040",padding:4}}>✕</button>
+          </div>
+
+          {/* Filtres rapides */}
+          <div style={{padding:"10px 24px",borderBottom:"1px solid #f0e8d8",display:"flex",gap:8,flexWrap:"wrap"}}>
+            {["Tout","✅ Créée","✏️ Modifiée","🚫 Annulée","💰 Paiement","🧾 Facture","🔒 Bloquée"].map(f=>(
+              <button key={f} onClick={()=>setLogsFilter(f==="Tout"?"":f)}
+                style={{fontFamily:'"Jost",sans-serif',fontSize:10,padding:"3px 10px",borderRadius:20,cursor:"pointer",
+                  background:logsFilter===(f==="Tout"?"":f)?"#c9952a":"#f5f0e8",
+                  color:logsFilter===(f==="Tout"?"":f)?"#fff":"#8a7040",
+                  border:"1px solid "+(logsFilter===(f==="Tout"?"":f)?"#c9952a":"#e8d8b0")}}>
+                {f}
+              </button>
+            ))}
+          </div>
+
+          {/* Liste */}
+          <div style={{flex:1,overflowY:"auto",padding:"8px 0"}}>
+            {logsLoading&&<p style={{padding:40,textAlign:"center",color:"#b0a070",fontFamily:'"Jost",sans-serif',fontSize:13}}>Chargement...</p>}
+            {!logsLoading&&filteredLogs.length===0&&<p style={{padding:40,textAlign:"center",color:"#b0a070",fontFamily:'"Jost",sans-serif',fontSize:13}}>Aucune action</p>}
+            {filteredLogs.map(log=>{
+              const d = new Date(log.created_at);
+              const dateStr = d.toLocaleDateString("fr-FR");
+              const timeStr = d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+              return(
+                <div key={log.id} style={{padding:"12px 24px",borderBottom:"1px solid #f5f0ea",display:"flex",gap:12,alignItems:"flex-start"}}>
+                  <div style={{flex:1}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}>
+                      <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:700,color:"#2a1e08"}}>{log.action}</p>
+                      <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#b0a070"}}>{dateStr} {timeStr}</p>
+                    </div>
+                    <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#6a5530",marginBottom:2}}>
+                      👤 {log.user_email}
+                    </p>
+                    {log.details&&(
+                      <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040"}}>
+                        {[
+                          log.details.client&&`${log.details.client}`,
+                          log.details.chambre&&`Ch.${log.details.chambre}`,
+                          log.details.checkin&&`${new Date(log.details.checkin).toLocaleDateString("fr-FR")} → ${new Date(log.details.checkout).toLocaleDateString("fr-FR")}`,
+                          log.details.montant&&`${parseFloat(log.details.montant).toFixed(3)} TND`,
+                          log.details.numero&&`F-${log.details.numero}`,
+                        ].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Footer refresh */}
+          <div style={{padding:"12px 24px",borderTop:"1px solid #f0e8d8",background:"#faf8f5"}}>
+            <button onClick={loadLogs} style={{fontFamily:'"Jost",sans-serif',fontSize:11,background:"#f0f4ff",border:"1px solid #c0cfee",color:"#3a5fc8",borderRadius:6,padding:"6px 16px",cursor:"pointer",fontWeight:600}}>
+              🔄 Actualiser
+            </button>
+          </div>
+        </div>
+      </>
+    )}
   );
 }
