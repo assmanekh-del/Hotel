@@ -1,4 +1,4 @@
-function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture,cancelFacture,showToast,doPrint,montantEnLettres,SignatureBlock}){
+function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture,cancelFacture,showToast,doPrint,montantEnLettres,SignatureBlock,nextInvNum,userRole}){
   const setFI=fn=>setFreeInvoice(f=>fn(f));
   const G2="#8B6434";
   const [clients,setClients]=React.useState([]);
@@ -211,14 +211,15 @@ function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture
             const rem=parseFloat(fi.remise)||0;
             const remMont=Math.round(gTTC*(rem/100)*100)/100;
             const net=Math.round((gTTC-remMont+1)*100)/100;
-            const ok=await saveFacture({numero:fi.invNum,type:'libre',client:fi.client||null,adresse:fi.adresse||null,phone:fi.phone||null,email:fi.email||null,mf:fi.mf||null,montant_ht:gHT,tva:Math.round((gTTC-gHT)*100)/100,timbre:1,montant_ttc:net,remise:rem,notes:fi.notes||null,lignes:fi.lines});
+            const num=await nextInvNum();setFI(f=>({...f,invNum:num}));
+            const ok=await saveFacture({numero:num,type:'libre',client:fi.client||null,adresse:fi.adresse||null,phone:fi.phone||null,email:fi.email||null,mf:fi.mf||null,montant_ht:gHT,tva:Math.round((gTTC-gHT)*100)/100,timbre:1,montant_ttc:net,remise:rem,notes:fi.notes||null,lignes:fi.lines});
             if(ok){setFI(f=>({...f,saved:true}));showToast('Facture F-'+fi.invNum+' enregistrée ✓','success');}
             else showToast('Erreur enregistrement','error');
           }}>💾 Enregistrer</button>
         ):(
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#2a8a5a",fontWeight:700}}>✓ F-{fi.invNum}</span>
-            <button className="btn-red" style={{fontSize:11,padding:"5px 12px"}} onClick={async()=>{
+            {userRole==="gerant"&&<button className="btn-red" style={{fontSize:11,padding:"5px 12px"}} onClick={async()=>{
               if(!confirm('Annuler et supprimer la facture F-'+fi.invNum+' ?')) return;
               await cancelFacture(fi.invNum);
               setFI(f=>({...f,saved:false,invNum:undefined}));
