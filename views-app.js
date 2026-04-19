@@ -378,6 +378,7 @@ function App({user,onLogout}){
   );
 
   return(
+    <>
     <div style={{fontFamily:'"Cormorant Garamond",Georgia,serif',minHeight:"100vh",background:"#f5f0e8",color:"#2a1e08",display:"flex"}}>
       <style>{css}</style>
 
@@ -2796,7 +2797,6 @@ function App({user,onLogout}){
       </div>{/* fin contenu principal */}
     </div>
 
-    {/* ══ PANNEAU JOURNAL D'ACTIVITÉ ══ */}
     {showJournal&&(
       <>
         {/* Overlay */}
@@ -2869,5 +2869,6 @@ function App({user,onLogout}){
         </div>
       </>
     )}
+  </>
   );
 }
