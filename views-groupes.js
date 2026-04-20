@@ -563,7 +563,7 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
     </div>
 
     {/* ══ MODAL FACTURE GROUPÉE ══ */}
-      {factureModal&&(
+    {factureModal&&(
         <div className="modal-overlay" onClick={()=>setFactureModal(null)}>
           <div className="modal" style={{maxWidth:660}} onClick={e=>e.stopPropagation()}>
             <div className="no-print" style={{marginBottom:16}}>
