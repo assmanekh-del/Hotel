@@ -219,12 +219,14 @@ function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture
         ):(
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#2a8a5a",fontWeight:700}}>✓ F-{fi.invNum}</span>
-            {userRole==="gerant"&&<button className="btn-red" style={{fontSize:11,padding:"5px 12px"}} onClick={async()=>{
-              if(!confirm('Annuler et supprimer la facture F-'+fi.invNum+' ?')) return;
-              await cancelFacture(fi.invNum);
-              setFI(f=>({...f,saved:false,invNum:undefined}));
-              showToast('Facture annulée','error');
-            }}>✕ Annuler</button>
+            {userRole==="gerant"&&(
+              <button className="btn-red" style={{fontSize:11,padding:"5px 12px"}} onClick={async()=>{
+                if(!confirm('Annuler et supprimer la facture F-'+fi.invNum+' ?')) return;
+                await cancelFacture(fi.invNum);
+                setFI(f=>({...f,saved:false,invNum:undefined}));
+                showToast('Facture annulée','error');
+              }}>✕ Annuler</button>
+            )}
           </div>
         )}
         <button className="btn-primary" style={{opacity:fi.saved?1:.45,cursor:fi.saved?"pointer":"not-allowed"}} onClick={()=>{
