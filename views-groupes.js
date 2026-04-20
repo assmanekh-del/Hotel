@@ -185,6 +185,7 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
   const n = nights();
 
   return(
+    <>
     <div style={{padding:"24px 32px",maxWidth:1100,margin:"0 auto"}}>
 
       {/* ── EN-TÊTE ── */}
@@ -561,7 +562,7 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
       })()}
     </div>
 
-      {/* ══ MODAL FACTURE GROUPÉE ══ */}
+    {/* ══ MODAL FACTURE GROUPÉE ══ */}
       {factureModal&&(
         <div className="modal-overlay" onClick={()=>setFactureModal(null)}>
           <div className="modal" style={{maxWidth:660}} onClick={e=>e.stopPropagation()}>
@@ -654,6 +655,6 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
