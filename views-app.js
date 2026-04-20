@@ -219,14 +219,14 @@ function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture
         ):(
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             <span style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#2a8a5a",fontWeight:700}}>✓ F-{fi.invNum}</span>
-            {userRole==="gerant"&&<button className="btn-red" style={{fontSize:11,padding:"5px 12px"}} onClick={async()=>{
-              if(!confirm('Annuler et supprimer la facture F-'+fi.invNum+' ?')) return;
-              await cancelFacture(fi.invNum);
-              setFI(f=>({...f,saved:false,invNum:undefined}));
-              showToast('Facture annulée','error');
-            }}>✕ Annuler</button>
-          </div>
-        )}
+            {userRole==="gerant"&&(
+              <button className="btn-red" style={{fontSize:11,padding:"5px 12px"}} onClick={async()=>{
+                if(!confirm('Annuler et supprimer la facture F-'+fi.invNum+' ?')) return;
+                await cancelFacture(fi.invNum);
+                setFI(f=>({...f,saved:false,invNum:undefined}));
+                showToast('Facture annulée','error');
+              }}>✕ Annuler</button>
+            )}
         <button className="btn-primary" style={{opacity:fi.saved?1:.45,cursor:fi.saved?"pointer":"not-allowed"}} onClick={()=>{
           if(!fi.saved) return;
           const lc=fi.lines.map(l=>{const ttc=parseFloat(l.prixTTC)||0;const ht=Math.round((ttc/1.07)*1000)/1000;const qty=parseFloat(l.qty)||1;return{...l,prixHT:ht,totalHT:Math.round(qty*ht*100)/100,totalTTC:Math.round(qty*ttc*100)/100};});
