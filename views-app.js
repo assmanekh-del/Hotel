@@ -68,6 +68,7 @@ function App({user,onLogout}){
     }
   }
   async function cancelFacture(numero){
+    addLog("🗑 Facture supprimée",{numero});
     try{
       await sb.from('factures').delete().eq('numero',numero);
       const isDevis=(numero||'').startsWith('DEV-');
@@ -258,6 +259,8 @@ function App({user,onLogout}){
   }
 
   async function deleteRes(id){
+    const r=reservations.find(x=>x.id===id);
+    addLog("🗑 Réservation supprimée",{client:r?.guest,chambre:ROOMS.find(rm=>rm.id===r?.roomId)?.number,checkin:r?.checkin,checkout:r?.checkout});
     setSyncing(true);
     try{await sb.from("reservations").delete().eq("id",id);setModal(null);showToast("Réservation supprimée");}
     catch(e){showToast("Erreur","error");}
@@ -265,6 +268,9 @@ function App({user,onLogout}){
   }
 
   async function updateStatus(id,status){
+    const r=reservations.find(x=>x.id===id);
+    const icons={"checkedin":"🛎 Check-in","checkedout":"✈️ Check-out","cancelled":"🚫 Annulation"};
+    if(icons[status]) addLog(icons[status],{client:r?.guest,chambre:ROOMS.find(rm=>rm.id===r?.roomId)?.number});
     setSyncing(true);
     try{await sb.from("reservations").update({status}).eq("id",id);showToast("Statut mis à jour ✓");}
     catch(e){showToast("Erreur","error");}
@@ -1175,7 +1181,7 @@ function App({user,onLogout}){
 
         {/* ── ARCHIVES FACTURES ── */}
         {view==="archives"&&<ArchivesView sb={sb} openDetail={openDetail} ROOMS={ROOMS} LOGO={LOGO} G2="#8B6434" doPrint={doPrint} setModal={setModal}/>}
-        {view==="groupes"&&<GroupesView sb={sb} ROOMS={ROOMS} reservations={reservations} setReservations={setReservations} showToast={showToast} doPrint={doPrint} montantEnLettres={montantEnLettres} SignatureBlock={SignatureBlock} LOGO={LOGO} saveFacture={saveFacture} nextInvNum={nextInvNum}/>}
+        {view==="groupes"&&<GroupesView sb={sb} ROOMS={ROOMS} reservations={reservations} setReservations={setReservations} showToast={showToast} doPrint={doPrint} montantEnLettres={montantEnLettres} SignatureBlock={SignatureBlock} LOGO={LOGO} saveFacture={saveFacture} nextInvNum={nextInvNum} userEmail={user?.email}/>}
         {view==="police"&&<LivreDePolice reservations={reservations} ROOMS={ROOMS} LOGO={LOGO}/>}
         {view==="contrats"&&<ContratsView sb={sb}/>}
         {view==="charges"&&<ChargesView sb={sb} LOGO={LOGO}/>}

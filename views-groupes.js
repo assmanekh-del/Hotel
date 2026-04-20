@@ -1,4 +1,4 @@
-function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPrint, montantEnLettres, SignatureBlock, LOGO, saveFacture, nextInvNum}) {
+function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPrint, montantEnLettres, SignatureBlock, LOGO, saveFacture, nextInvNum, userEmail}) {
   const {useState, useEffect} = React;
   const [groupes, setGroupes] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,6 +15,7 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
   const [form, setForm] = useState(emptyForm);
   const [step, setStep] = useState(1); // 1=infos groupe, 2=sélection chambres, 3=clients
   const [saving, setSaving] = useState(false);
+  const [factureModal, setFactureModal] = useState(null); // {groupe, lignes, grandTTC, grandHT, tvaAmt, netAPayer, adresse, num, saved}
 
   // ── Chargement groupes ──
   useEffect(()=>{
@@ -143,6 +144,8 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
       setReservations(prev=>[...prev, ...(newResas||[]).map(fromDb)]);
       await loadGroupes();
       showToast(`Groupe créé — ${form.chambres.length} chambre${form.chambres.length>1?"s":""} ✓`,"success");
+      // Log via fonction globale si disponible
+      try{await sb.from('logs').insert([{user_email:userEmail||"inconnu",action:"🏢 Groupe créé",details:{societe:form.nomSociete,bon_commande:form.bonCommande,chambres:form.chambres.length,checkin:form.checkin,checkout:form.checkout}}]);}catch(e){}
       setModal(null);
       setForm(emptyForm);
       setStep(1);
@@ -158,7 +161,7 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
   }
 
   // ── Facture groupée ──
-  async function factureGroupee(groupe){
+  function factureGroupee(groupe){
     const resas = resasGroupe(groupe.id);
     if(resas.length===0){showToast("Aucune réservation dans ce groupe","error");return;}
     const lignes = resas.map(r=>{
@@ -174,29 +177,8 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
     const grandHT = Math.round((grandTTC/1.07)*100)/100;
     const tvaAmt = Math.round((grandTTC-grandHT)*100)/100;
     const netAPayer = Math.round((grandTTC+1)*100)/100;
-    const adresse = [groupe.bon_commande?`Bon de commande : ${groupe.bon_commande}`:""].filter(Boolean).join("\n");
-    const num = await nextInvNum();
-    const ok = await saveFacture({
-      numero:num, type:'libre',
-      client: groupe.nom_societe,
-      adresse,
-      phone:null, email:null, mf:groupe.mf||null,
-      montant_ht:grandHT, tva:tvaAmt,
-      timbre:1, montant_ttc:netAPayer,
-      remise:0, notes:groupe.notes||null, lignes
-    });
-    if(ok){
-      showToast(`Facture F-${num} enregistrée ✓`,"success");
-      doPrint({
-        numero:`F-${num}`, type:'libre',
-        client:groupe.nom_societe,
-        adresse,
-        mf:groupe.mf||null, phone:null, cin:null, showCachet:true,
-        montant_ht:grandHT, tva:tvaAmt,
-        montant_ttc:netAPayer,
-        remise:0, notes:groupe.notes, lignes, created_at:new Date()
-      });
-    } else showToast("Erreur enregistrement","error");
+    const adresse = groupe.bon_commande?`Bon de commande : ${groupe.bon_commande}`:"";
+    setFactureModal({groupe, lignes, grandTTC, grandHT, tvaAmt, netAPayer, adresse, num:null, saved:false});
   }
 
   const dispo = chambresDisponibles();
@@ -577,6 +559,101 @@ function GroupesView({sb, ROOMS, reservations, setReservations, showToast, doPri
           </div>
         );
       })()}
+    </div>
+
+      {/* ══ MODAL FACTURE GROUPÉE ══ */}
+      {factureModal&&(
+        <div className="modal-overlay" onClick={()=>setFactureModal(null)}>
+          <div className="modal" style={{maxWidth:660}} onClick={e=>e.stopPropagation()}>
+            <div className="no-print" style={{marginBottom:16}}>
+              <h2 style={{fontSize:20,fontWeight:600,color:G2,marginBottom:4,fontFamily:'"Cormorant Garamond",serif'}}>🧾 Facture groupée</h2>
+              <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040",marginBottom:16}}>
+                {factureModal.groupe.nom_societe}{factureModal.groupe.bon_commande?` — BC : ${factureModal.groupe.bon_commande}`:""}
+              </p>
+
+              {/* Aperçu lignes */}
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,marginBottom:10}}>
+                <thead><tr style={{background:"#faf8f5",borderBottom:"2px solid #e0d8cc"}}>
+                  {["Désignation","Nuits","P.U. TTC","Total"].map((h,i)=>(
+                    <th key={i} style={{textAlign:i>0?"right":"left",padding:"7px 8px",fontSize:9,fontWeight:700,color:"#8a7a65",textTransform:"uppercase"}}>{h}</th>
+                  ))}
+                </tr></thead>
+                <tbody>
+                  {factureModal.lignes.map((l,i)=>(
+                    <tr key={i} style={{borderBottom:"1px solid #f0ebe3"}}>
+                      <td style={{padding:"8px",fontSize:11,color:"#2c2416"}}>{l.desc}</td>
+                      <td style={{padding:"8px",textAlign:"right"}}>{l.qty}</td>
+                      <td style={{padding:"8px",textAlign:"right"}}>{l.prixTTC.toFixed(3)}</td>
+                      <td style={{padding:"8px",textAlign:"right",fontWeight:600}}>{(l.qty*l.prixTTC).toFixed(3)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Totaux */}
+              <div style={{display:"flex",justifyContent:"flex-end",marginBottom:14}}>
+                <table style={{fontSize:11,borderCollapse:"collapse",minWidth:260,border:"1px solid #e0d8cc",borderRadius:8,overflow:"hidden"}}>
+                  <tbody>
+                    {[
+                      ["Total HT", factureModal.grandHT.toFixed(3)+" TND"],
+                      ["TVA (7%)", factureModal.tvaAmt.toFixed(3)+" TND"],
+                      ["Timbre fiscal", "1,000 TND"],
+                    ].map(([l,v])=>(
+                      <tr key={l} style={{borderBottom:"1px solid #e0d8cc",background:"#faf8f5"}}>
+                        <td style={{padding:"8px 14px",color:"#6a5a45"}}>{l}</td>
+                        <td style={{padding:"8px 14px",textAlign:"right",fontWeight:600,color:"#6a5a45"}}>{v}</td>
+                      </tr>
+                    ))}
+                    <tr style={{background:G2}}>
+                      <td style={{padding:"10px 14px",fontWeight:800,fontSize:13,color:"#fff"}}>Net à payer</td>
+                      <td style={{padding:"10px 14px",fontWeight:800,fontSize:16,color:"#fff",textAlign:"right"}}>{factureModal.netAPayer.toFixed(3)} TND</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Boutons */}
+              <div style={{display:"flex",justifyContent:"flex-end",gap:8,paddingTop:12,borderTop:"1px solid #f0ebe3"}}>
+                <button className="btn-ghost" onClick={()=>setFactureModal(null)}>Fermer</button>
+                {!factureModal.saved?(
+                  <button className="btn-gold" onClick={async()=>{
+                    const num = await nextInvNum();
+                    const fm = factureModal;
+                    const ok = await saveFacture({
+                      numero:num, type:'libre',
+                      client:fm.groupe.nom_societe, adresse:fm.adresse,
+                      phone:null, email:null, mf:fm.groupe.mf||null,
+                      montant_ht:fm.grandHT, tva:fm.tvaAmt, timbre:1,
+                      montant_ttc:fm.netAPayer, remise:0,
+                      notes:fm.groupe.notes||null, lignes:fm.lignes
+                    });
+                    if(ok){
+                      setFactureModal(f=>({...f,saved:true,num}));
+                      showToast(`Facture F-${num} enregistrée ✓`,"success");
+                    } else showToast("Erreur enregistrement","error");
+                  }}>💾 Enregistrer</button>
+                ):(
+                  <span style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#2a8a5a",fontWeight:700,alignSelf:"center"}}>✓ F-{factureModal.num}</span>
+                )}
+                <button className="btn-primary"
+                  style={{opacity:factureModal.saved?1:.45,cursor:factureModal.saved?"pointer":"not-allowed"}}
+                  onClick={()=>{
+                    if(!factureModal.saved) return;
+                    const fm = factureModal;
+                    doPrint({
+                      numero:`F-${fm.num}`, type:'libre',
+                      client:fm.groupe.nom_societe, adresse:fm.adresse,
+                      mf:fm.groupe.mf||null, phone:null, cin:null, showCachet:true,
+                      montant_ht:fm.grandHT, tva:fm.tvaAmt,
+                      montant_ttc:fm.netAPayer,
+                      remise:0, notes:fm.groupe.notes, lignes:fm.lignes, created_at:new Date()
+                    });
+                  }}>🖨 Imprimer</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
