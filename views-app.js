@@ -68,9 +68,10 @@ function App({user,onLogout}){
     }
   }
   async function cancelFacture(numero){
-    addLog("🗑 Facture supprimée",{numero});
     try{
       await sb.from('factures').delete().eq('numero',numero);
+      // Log directement via sb car addLog peut ne pas être encore défini
+      sb.from('logs').insert([{user_email:user?.email||'inconnu',action:'🗑 Facture supprimée',details:{numero}}]).then();
       const isDevis=(numero||'').startsWith('DEV-');
       if(isDevis){
         const resD=await sb.from('factures').select('*',{count:'exact',head:true}).like('numero','DEV-%');
