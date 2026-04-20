@@ -235,7 +235,7 @@ function App({user,onLogout}){
       // ── Mémorisation automatique du client ──
       if(form.guest&&form.guest!=="BLOQUÉE"&&modal.type!=="block"){
         try{
-          const {data:existing}=await sb.from('clients').select('id').eq('nom',form.guest).single();
+          const {data:existing}=await sb.from('clients').select('id').eq('nom',form.guest).maybeSingle();
           if(existing){
             await sb.from('clients').update({
               phone:form.phone||null,
