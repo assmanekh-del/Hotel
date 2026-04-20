@@ -129,12 +129,13 @@ function App({user,onLogout}){
   // ── Ajouter un log ──
   async function addLog(action, details={}){
     try{
-      await sb.from('logs').insert([{
+      const {error} = await sb.from('logs').insert([{
         user_email: user?.email||'inconnu',
         action,
         details,
       }]);
-    }catch(e){}
+      if(error) console.error('addLog error:', error.message, error.details);
+    }catch(e){console.error('addLog catch:',e);}
   }
 
   // ── Charger les logs ──
