@@ -60,8 +60,10 @@ function App({user,onLogout}){
   }
   async function saveFacture(payload){
     addLog("🧾 Facture créée",{numero:payload.numero,client:payload.client,montant:payload.montant_ttc});
+    // Ajouter mode_paiement si présent dans le form actuel
+    const payloadWithMode={...payload,mode_paiement:payload.mode_paiement||form?.modePaiement||"especes"};
     try{
-      const {error}=await sb.from('factures').insert([payload]);
+      const {error}=await sb.from('factures').insert([payloadWithMode]);
       if(error) throw error;
       return true;
     }catch(e){
