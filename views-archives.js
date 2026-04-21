@@ -138,12 +138,21 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal}){
                 {f.type==="libre"?"Facture libre":f.type==="devis"?"Devis":"Réservation"}
               </span>
               <div style={{textAlign:"center"}}>
-                {(()=>{
-                  const modeIcons={especes:"💵",carte:"💳",cheque:"📝",virement:"🏦"};
-                  const modeLabels={especes:"Espèces",carte:"Carte",cheque:"Chèque",virement:"Virement"};
-                  const m=f.mode_paiement||"especes";
-                  return<><p style={{fontSize:16}}>{modeIcons[m]||"💵"}</p><p style={{fontFamily:'"Jost",sans-serif',fontSize:9,color:"#8a7040"}}>{modeLabels[m]||"Espèces"}</p></>;
-                })()}
+                <select
+                  value={f.mode_paiement||"especes"}
+                  onChange={async e=>{
+                    const mode=e.target.value;
+                    try{
+                      await sb.from('factures').update({mode_paiement:mode}).eq('id',f.id);
+                      setFactures(prev=>prev.map(x=>x.id===f.id?{...x,mode_paiement:mode}:x));
+                    }catch(err){alert('Erreur');}
+                  }}
+                  style={{fontSize:11,padding:"4px 6px",border:"1.5px solid #e8d8b0",borderRadius:6,background:"#fef9f0",cursor:"pointer",color:"#6a5530",fontFamily:'"Jost",sans-serif'}}>
+                  <option value="especes">💵 Espèces</option>
+                  <option value="carte">💳 Carte</option>
+                  <option value="cheque">📝 Chèque</option>
+                  <option value="virement">🏦 Virement</option>
+                </select>
               </div>
               <p style={{fontFamily:'"Jost",sans-serif',fontSize:14,fontWeight:700,color:"#2a1e08",textAlign:"right"}}>{(f.montant_ttc||0).toFixed(3)}<span style={{fontSize:9,color:"#8a7040",marginLeft:2}}>TND</span></p>
               <div style={{display:"flex",gap:6,alignItems:"center"}}>
