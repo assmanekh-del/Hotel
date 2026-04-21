@@ -279,11 +279,16 @@ function App({user,onLogout}){
     finally{setSyncing(false);}
   }
 
-  async function markPaid(id){
+  async function markPaid(id, mode="especes"){
     const r=reservations.find(x=>x.id===id);
-    addLog("💰 Paiement encaissé",{client:r?.guest,chambre:ROOMS.find(rm=>rm.id===r?.roomId)?.number,montant:r?getEffectivePrice(r):null});
+    const modeLabels={especes:"💵 Espèces",carte:"💳 Carte",cheque:"📝 Chèque",virement:"🏦 Virement"};
+    addLog("💰 Paiement encaissé",{client:r?.guest,chambre:ROOMS.find(rm=>rm.id===r?.roomId)?.number,montant:r?getEffectivePrice(r):null,mode:modeLabels[mode]||mode});
     setSyncing(true);
-    try{await sb.from("reservations").update({paid:true}).eq("id",id);showToast("Paiement enregistré ✓");}
+    try{
+      await sb.from("reservations").update({paid:true,mode_paiement:mode}).eq("id",id);
+      setReservations(prev=>prev.map(x=>x.id===id?{...x,paid:true,modePaiement:mode}:x));
+      showToast("Paiement enregistré — "+( modeLabels[mode]||mode)+" ✓");
+    }
     catch(e){showToast("Erreur","error");}
     finally{setSyncing(false);}
   }
@@ -1212,6 +1217,48 @@ function App({user,onLogout}){
 
         {/* ── ARCHIVES FACTURES ── */}
         {view==="archives"&&<ArchivesView sb={sb} openDetail={openDetail} ROOMS={ROOMS} LOGO={LOGO} G2="#8B6434" doPrint={doPrint} setModal={setModal}/>}
+        {/* ══ MODAL MODE DE PAIEMENT ══ */}
+        {modal?.type==="paiement"&&(()=>{
+          const r=modal.data;
+          const room=ROOMS.find(rm=>rm.id===r.roomId);
+          const selectedMode=modal.mode||"especes";
+          const modes=[
+            {value:"especes",label:"💵 Espèces",color:"#2d7a4f",bg:"#f0faf5"},
+            {value:"carte",label:"💳 Carte bancaire",color:"#1a5a8a",bg:"#f0f5ff"},
+            {value:"cheque",label:"📝 Chèque",color:"#8a5c10",bg:"#fff8ee"},
+            {value:"virement",label:"🏦 Virement",color:"#6b35b8",bg:"#f5f0fc"},
+          ];
+          return ReactDOM.createPortal(
+            <div style={{position:"fixed",inset:0,background:"rgba(42,30,8,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,padding:20}} onClick={closeModal}>
+              <div style={{background:"#fff",borderRadius:12,padding:"28px 32px",maxWidth:380,width:"100%",boxShadow:"0 8px 40px rgba(42,30,8,0.18)"}} onClick={e=>e.stopPropagation()}>
+                <h2 style={{fontSize:20,fontWeight:500,marginBottom:4,fontFamily:'"Cormorant Garamond",serif'}}>💰 Mode de paiement</h2>
+                <p style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#8a7040",marginBottom:20}}>
+                  {r.guest} — Ch. {room?.number} — {getEffectivePrice(r).toFixed(3)} TND
+                </p>
+                <div style={{display:"grid",gap:8,marginBottom:20}}>
+                  {modes.map(m=>(
+                    <button key={m.value}
+                      onClick={()=>setModal(mod=>({...mod,mode:m.value}))}
+                      style={{padding:"12px 16px",borderRadius:8,border:"2px solid "+(selectedMode===m.value?m.color:"#e8d8b0"),background:selectedMode===m.value?m.bg:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all .15s"}}>
+                      <span style={{fontFamily:'"Jost",sans-serif',fontSize:14,fontWeight:selectedMode===m.value?700:400,color:selectedMode===m.value?m.color:"#6a5530"}}>{m.label}</span>
+                      {selectedMode===m.value&&<span style={{marginLeft:"auto",color:m.color,fontWeight:700}}>✓</span>}
+                    </button>
+                  ))}
+                </div>
+                <div style={{display:"flex",justifyContent:"flex-end",gap:8}}>
+                  <button className="btn-ghost" onClick={closeModal}>Annuler</button>
+                  <button className="btn-gold" onClick={async(e)=>{
+                    e.stopPropagation();
+                    await markPaid(r.id, selectedMode);
+                    setModal({type:"detail",data:{...r,paid:true,modePaiement:selectedMode}});
+                  }}>✓ Confirmer le paiement</button>
+                </div>
+              </div>
+            </div>,
+            document.body
+          );
+        })()}
+
         {/* ══ MODAL CHOIX DÉPART/ARRIVÉE MÊME JOUR ══ */}
         {modal?.type==="calChoix"&&(
           <div className="modal-overlay" onClick={closeModal}>
@@ -2155,7 +2202,7 @@ function App({user,onLogout}){
                       setModal({type:"prolonger",data:r,newCheckout:nextDay});
                     }}>📅 Prolonger</button>}
                   {!["cancelled","blocked","checkedout"].includes(r.status)&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"cancelled");addLog("🚫 Réservation annulée",{client:r.guest,chambre:ROOMS.find(rm=>rm.id===r.roomId)?.number});setModal({type:"detail",data:{...r,status:"cancelled"}});}}>Annuler</button>}
-                  {!r.paid&&r.status!=="blocked"&&<button className="btn-outline" onClick={()=>{markPaid(r.id);setModal({type:"detail",data:{...r,paid:true}});}}>Marquer payé</button>}
+                  {!r.paid&&r.status!=="blocked"&&<button className="btn-outline" style={{background:"#f0faf5",borderColor:"#a0d8b8",color:"#2d7a4f"}} onClick={()=>setModal({type:"paiement",data:r})}>💰 Marquer payé</button>}
                   {!["blocked","cancelled"].includes(r.status)&&<button className="btn-outline" onClick={()=>openInvoice(r)}>Facture</button>}
                   {r.pension==="dp"&&["confirmed","checkedin"].includes(r.status)&&<button className="btn-outline" style={{background:"#fff8ee",borderColor:"#e8b84b",color:"#8a5c10"}} onClick={()=>setModal({type:"bonRestaurant",data:r})}>🍽 Bon Restaurant</button>}
                 </div>
