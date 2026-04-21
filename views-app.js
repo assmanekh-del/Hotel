@@ -7,6 +7,7 @@ function App({user,onLogout}){
   const [syncing,setSyncing]=useState(false);
   const [modal,setModal]=useState(null);
   const [userRole,setUserRole]=useState(null);
+  const [paiementModal,setPaiementModal]=useState(null);
   const [showJournal,setShowJournal]=useState(false);
   const [logs,setLogs]=useState([]);
   const [logsLoading,setLogsLoading]=useState(false);
@@ -1218,10 +1219,10 @@ function App({user,onLogout}){
         {/* ── ARCHIVES FACTURES ── */}
         {view==="archives"&&<ArchivesView sb={sb} openDetail={openDetail} ROOMS={ROOMS} LOGO={LOGO} G2="#8B6434" doPrint={doPrint} setModal={setModal}/>}
         {/* ══ MODAL MODE DE PAIEMENT ══ */}
-        {modal?.type==="paiement"&&(()=>{
-          const r=modal.data;
+        {paiementModal&&(()=>{
+          const r=paiementModal.data;
           const room=ROOMS.find(rm=>rm.id===r.roomId);
-          const selectedMode=modal.mode||"especes";
+          const selectedMode=paiementModal.mode||"especes";
           const modes=[
             {value:"especes",label:"💵 Espèces",color:"#2d7a4f",bg:"#f0faf5"},
             {value:"carte",label:"💳 Carte bancaire",color:"#1a5a8a",bg:"#f0f5ff"},
@@ -1238,7 +1239,7 @@ function App({user,onLogout}){
                 <div style={{display:"grid",gap:8,marginBottom:20}}>
                   {modes.map(m=>(
                     <button key={m.value}
-                      onClick={()=>setModal(mod=>({...mod,mode:m.value}))}
+                      onClick={()=>setPaiementModal(mod=>({...mod,mode:m.value}))}
                       style={{padding:"12px 16px",borderRadius:8,border:"2px solid "+(selectedMode===m.value?m.color:"#e8d8b0"),background:selectedMode===m.value?m.bg:"#fff",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"all .15s"}}>
                       <span style={{fontFamily:'"Jost",sans-serif',fontSize:14,fontWeight:selectedMode===m.value?700:400,color:selectedMode===m.value?m.color:"#6a5530"}}>{m.label}</span>
                       {selectedMode===m.value&&<span style={{marginLeft:"auto",color:m.color,fontWeight:700}}>✓</span>}
@@ -1246,10 +1247,11 @@ function App({user,onLogout}){
                   ))}
                 </div>
                 <div style={{display:"flex",justifyContent:"flex-end",gap:8}}>
-                  <button className="btn-ghost" onClick={closeModal}>Annuler</button>
+                  <button className="btn-ghost" onClick={()=>setPaiementModal(null)}>Annuler</button>
                   <button className="btn-gold" onClick={async(e)=>{
                     e.stopPropagation();
                     await markPaid(r.id, selectedMode);
+                    setPaiementModal(null);
                     setModal({type:"detail",data:{...r,paid:true,modePaiement:selectedMode}});
                   }}>✓ Confirmer le paiement</button>
                 </div>
@@ -2202,7 +2204,7 @@ function App({user,onLogout}){
                       setModal({type:"prolonger",data:r,newCheckout:nextDay});
                     }}>📅 Prolonger</button>}
                   {!["cancelled","blocked","checkedout"].includes(r.status)&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"cancelled");addLog("🚫 Réservation annulée",{client:r.guest,chambre:ROOMS.find(rm=>rm.id===r.roomId)?.number});setModal({type:"detail",data:{...r,status:"cancelled"}});}}>Annuler</button>}
-                  {!r.paid&&r.status!=="blocked"&&<button className="btn-outline" style={{background:"#f0faf5",borderColor:"#a0d8b8",color:"#2d7a4f"}} onClick={()=>setModal({type:"paiement",data:r})}>💰 Marquer payé</button>}
+                  {!r.paid&&r.status!=="blocked"&&<button className="btn-outline" style={{background:"#f0faf5",borderColor:"#a0d8b8",color:"#2d7a4f"}} onClick={()=>setPaiementModal({data:r,mode:"especes"})}>💰 Marquer payé</button>}
                   {!["blocked","cancelled"].includes(r.status)&&<button className="btn-outline" onClick={()=>openInvoice(r)}>Facture</button>}
                   {r.pension==="dp"&&["confirmed","checkedin"].includes(r.status)&&<button className="btn-outline" style={{background:"#fff8ee",borderColor:"#e8b84b",color:"#8a5c10"}} onClick={()=>setModal({type:"bonRestaurant",data:r})}>🍽 Bon Restaurant</button>}
                 </div>
