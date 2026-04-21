@@ -17,6 +17,7 @@ function App({user,onLogout}){
   const [filterDateFrom,setFilterDateFrom]=useState("");
   const [filterDateTo,setFilterDateTo]=useState("");
   const [filterPaid,setFilterPaid]=useState("all");
+  const [filterModePaiement,setFilterModePaiement]=useState("all");
   const [toast,setToast]=useState(null);
   const [devisRooms,setDevisRooms]=useState([]);
   const [devisInfo,setDevisInfo]=useState({client:"",checkin:"",checkout:"",notes:""});
@@ -306,7 +307,8 @@ function App({user,onLogout}){
     const byDateFrom=!filterDateFrom||r.checkin>=filterDateFrom||r.checkout>filterDateFrom;
     const byDateTo=!filterDateTo||r.checkin<=filterDateTo;
     const byPaid=filterPaid==="all"||( filterPaid==="unpaid"&&!r.paid&&!["cancelled","blocked"].includes(r.status))||(filterPaid==="paid"&&r.paid);
-    return ms&&byStatus&&byDateFrom&&byDateTo&&byPaid;
+    const byMode=filterModePaiement==="all"||(r.modePaiement||"especes")===filterModePaiement;
+    return ms&&byStatus&&byDateFrom&&byDateTo&&byPaid&&byMode;
   });
 
   const css=`
@@ -336,7 +338,7 @@ function App({user,onLogout}){
     .res-row{padding:14px 20px;border-bottom:1px solid #f0e8d8;display:grid;grid-template-columns:75px 1fr 95px 110px 120px 120px;align-items:center;gap:10px;transition:background .15s;cursor:pointer}
     .res-row:hover{background:#fef9f0}
     .badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:12px;font-family:"Jost",sans-serif;font-weight:500}
-    .modal-overlay{position:fixed;inset:0;background:rgba(42,30,8,0.5);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px;backdrop-filter:blur(4px)}
+    .modal-overlay{position:fixed;inset:0;background:rgba(42,30,8,0.45);display:flex;align-items:center;justify-content:center;z-index:100;padding:20px}
     .modal{background:#fff;border-radius:12px;padding:32px;width:100%;max-width:580px;max-height:92vh;overflow-y:auto;animation:slideIn .22s ease;box-shadow:0 20px 60px rgba(42,30,8,0.2)}
     .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
     .form-group label{display:block;font-family:"Jost",sans-serif;font-size:11px;letter-spacing:1.5px;color:#8a7040;text-transform:uppercase;margin-bottom:6px;font-weight:600}
@@ -897,9 +899,27 @@ function App({user,onLogout}){
                                 const isEnd=status&&!nextSt;
 
                                 // Clic : si libre → nouvelle résa, si départ ce jour → nouvelle résa, si occupé → détail
+                                // Réservation qui arrive ce jour (checkin=d)
+                                const resArrivee = reservations.find(r=>
+                                  r.roomId===room.id&&
+                                  ["confirmed","checkedin","pending"].includes(r.status)&&
+                                  r.checkin===d
+                                );
+                                // Réservation qui part ce jour (checkout=d)
+                                const resDepart = reservations.find(r=>
+                                  r.roomId===room.id&&
+                                  ["confirmed","checkedin"].includes(r.status)&&
+                                  r.checkout===d&&r.checkin<d
+                                );
+                                // Vrai conflit seulement si ce sont deux réservations DIFFÉRENTES
+                                const vraiConflit = resDepart&&resArrivee&&resDepart.id!==resArrivee.id;
+
                                 const handleClick=()=>{
-                                  if(status==="depart"){
-                                    // Départ ce jour → proposer nouvelle résa à partir de aujourd'hui
+                                  if(status==="depart"&&vraiConflit){
+                                    // Départ ET arrivée le même jour → menu de choix
+                                    setModal({type:"calChoix",room,date:d,resDepart,resArrivee});
+                                  } else if(status==="depart"){
+                                    // Départ ce jour → nouvelle résa
                                     setForm({roomId:room.id,guest:"",email:"",phone:"",
                                       checkin:d,checkout:"",
                                       adults:1,children:0,status:"confirmed",paid:false,
@@ -1020,7 +1040,7 @@ function App({user,onLogout}){
               </div>
 
               {/* Barre de recherche + filtres */}
-              <div style={{background:"#fff",border:"1px solid #e8ddc8",borderRadius:10,padding:"14px 18px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr auto",gap:12,alignItems:"end",boxShadow:"0 1px 4px rgba(42,30,8,0.05)"}}>
+              <div style={{background:"#fff",border:"1px solid #e8ddc8",borderRadius:10,padding:"14px 18px",display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr 1fr auto",gap:12,alignItems:"end",boxShadow:"0 1px 4px rgba(42,30,8,0.05)"}}>
                 {/* Recherche par nom */}
                 <div>
                   <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>🔍 Client / CIN / Email / Tél.</label>
@@ -1051,9 +1071,19 @@ function App({user,onLogout}){
                     <option value="unpaid">⏳ Impayés</option>
                     <option value="paid">✅ Payés</option>
                   </select>
-                  {(search||filterDateFrom||filterDateTo||filterStatus!=="all"||filterPaid!=="all")&&(
+                  <div>
+                    <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:5}}>🏦 Mode paiement</label>
+                    <select value={filterModePaiement} onChange={e=>setFilterModePaiement(e.target.value)} style={{width:"100%"}}>
+                      <option value="all">Tous</option>
+                      <option value="especes">💵 Espèces</option>
+                      <option value="carte">💳 Carte</option>
+                      <option value="cheque">📝 Chèque</option>
+                      <option value="virement">🏦 Virement</option>
+                    </select>
+                  </div>
+                  {(search||filterDateFrom||filterDateTo||filterStatus!=="all"||filterPaid!=="all"||filterModePaiement!=="all")&&(
                     <button className="btn-outline" style={{fontSize:11,padding:"5px 12px"}}
-                      onClick={()=>{setSearch("");setFilterDateFrom("");setFilterDateTo("");setFilterStatus("all");setFilterPaid("all");}}>
+                      onClick={()=>{setSearch("");setFilterDateFrom("");setFilterDateTo("");setFilterStatus("all");setFilterPaid("all");setFilterModePaiement("all");}}>
                       ✕ Réinitialiser
                     </button>
                   )}
@@ -1182,6 +1212,46 @@ function App({user,onLogout}){
 
         {/* ── ARCHIVES FACTURES ── */}
         {view==="archives"&&<ArchivesView sb={sb} openDetail={openDetail} ROOMS={ROOMS} LOGO={LOGO} G2="#8B6434" doPrint={doPrint} setModal={setModal}/>}
+        {/* ══ MODAL CHOIX DÉPART/ARRIVÉE MÊME JOUR ══ */}
+        {modal?.type==="calChoix"&&(
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal" style={{maxWidth:400}} onClick={e=>e.stopPropagation()}>
+              <h2 style={{fontSize:18,fontWeight:500,marginBottom:6,fontFamily:'"Cormorant Garamond",serif'}}>
+                Ch. {modal.room?.number} — {new Date(modal.date+"T12:00:00").toLocaleDateString("fr-FR")}
+              </h2>
+              <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040",marginBottom:20}}>
+                Départ et arrivée le même jour — que voulez-vous faire ?
+              </p>
+              <div style={{display:"grid",gap:10}}>
+                <button className="btn-outline" style={{textAlign:"left",padding:"12px 16px"}}
+                  onClick={()=>{closeModal();openDetail(modal.resDepart);}}>
+                  <p style={{fontWeight:700,marginBottom:2}}>✈️ Voir le départ</p>
+                  <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040"}}>{modal.resDepart?.guest}</p>
+                </button>
+                <button className="btn-outline" style={{textAlign:"left",padding:"12px 16px"}}
+                  onClick={()=>{closeModal();openDetail(modal.resArrivee);}}>
+                  <p style={{fontWeight:700,marginBottom:2}}>🛎 Voir l'arrivée</p>
+                  <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040"}}>{modal.resArrivee?.guest}</p>
+                </button>
+                <button className="btn-gold" style={{textAlign:"left",padding:"12px 16px"}}
+                  onClick={()=>{
+                    closeModal();
+                    setForm({roomId:modal.room.id,guest:"",email:"",phone:"",
+                      checkin:modal.date,checkout:"",adults:1,children:0,
+                      status:"confirmed",paid:false,notes:"",extraBed:false,
+                      babyBed:false,babyBedLocation:"",claim:"",assignedMenage:"",
+                      pension:"lpd",billingType:null,remise:0,customPrice:undefined});
+                    setModal({type:"new"});
+                  }}>
+                  <p style={{fontWeight:700,marginBottom:2}}>+ Nouvelle réservation</p>
+                  <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#fff9"}}>À partir du {new Date(modal.date+"T12:00:00").toLocaleDateString("fr-FR")}</p>
+                </button>
+                <button className="btn-ghost" onClick={closeModal}>Annuler</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {view==="groupes"&&<GroupesView sb={sb} ROOMS={ROOMS} reservations={reservations} setReservations={setReservations} showToast={showToast} doPrint={doPrint} montantEnLettres={montantEnLettres} SignatureBlock={SignatureBlock} LOGO={LOGO} saveFacture={saveFacture} nextInvNum={nextInvNum} userEmail={user?.email}/>}
         {view==="police"&&<LivreDePolice reservations={reservations} ROOMS={ROOMS} LOGO={LOGO}/>}
         {view==="contrats"&&<ContratsView sb={sb}/>}
@@ -1624,14 +1694,44 @@ function App({user,onLogout}){
                 <div className="form-grid">
                   <div className="form-group">
                     <label>Nationalité</label>
-                    <input value={form.nationality||""} onChange={e=>setForm(f=>({...f,nationality:e.target.value}))} placeholder="ex : Tunisienne, Française…"/>
+                    <select value={form.nationality||""} onChange={e=>setForm(f=>({...f,nationality:e.target.value}))}>
+                      <option value="">— Choisir —</option>
+                      <option>Tunisienne</option>
+                      <option>Algérienne</option>
+                      <option>Marocaine</option>
+                      <option>Libyenne</option>
+                      <option>Française</option>
+                      <option>Italienne</option>
+                      <option>Allemande</option>
+                      <option>Espagnole</option>
+                      <option>Britannique</option>
+                      <option>Belge</option>
+                      <option>Suisse</option>
+                      <option>Américaine</option>
+                      <option>Autre</option>
+                    </select>
                   </div>
+                  <div className="form-group">
+                    <label>Date de naissance</label>
+                    <input type="date" value={form.dateNaissance||""} onChange={e=>setForm(f=>({...f,dateNaissance:e.target.value}))}/>
+                  </div>
+                </div>
+                <div className="form-grid">
                   <div className="form-group">
                     <label style={{display:"flex",alignItems:"center",gap:6}}>
                       N° Passeport
                       <span style={{fontSize:9,fontWeight:600,color:"#a09080",background:"#f5f0e8",padding:"1px 6px",borderRadius:8,textTransform:"uppercase",letterSpacing:.5}}>étrangers</span>
                     </label>
                     <input value={form.passport||""} onChange={e=>setForm(f=>({...f,passport:e.target.value}))} placeholder="ex : AB123456"/>
+                  </div>
+                  <div className="form-group">
+                    <label>Mode de paiement</label>
+                    <select value={form.modePaiement||"especes"} onChange={e=>setForm(f=>({...f,modePaiement:e.target.value}))}>
+                      <option value="especes">💵 Espèces</option>
+                      <option value="carte">💳 Carte bancaire</option>
+                      <option value="cheque">📝 Chèque</option>
+                      <option value="virement">🏦 Virement</option>
+                    </select>
                   </div>
                 </div>
                 <div className="form-grid">
@@ -2048,6 +2148,12 @@ function App({user,onLogout}){
                   {r.status==="pending"&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"confirmed");setModal({type:"detail",data:{...r,status:"confirmed"}});}}>Confirmer</button>}
                   {r.status==="confirmed"&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"checkedin");setModal({type:"detail",data:{...r,status:"checkedin"}});}}>Check-in ✓</button>}
                   {r.status==="checkedin"&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"checkedout");setModal({type:"detail",data:{...r,status:"checkedout"}});}}>Check-out ✓</button>}
+                  {["confirmed","checkedin"].includes(r.status)&&<button className="btn-outline" style={{background:"#f0f8ff",borderColor:"#a0c8e8",color:"#1a5a8a"}} onClick={()=>{
+                      const d=new Date(r.checkout+"T12:00:00");
+                      d.setDate(d.getDate()+1);
+                      const nextDay=d.toISOString().split("T")[0];
+                      setModal({type:"prolonger",data:r,newCheckout:nextDay});
+                    }}>📅 Prolonger</button>}
                   {!["cancelled","blocked","checkedout"].includes(r.status)&&<button className="btn-outline" onClick={()=>{updateStatus(r.id,"cancelled");addLog("🚫 Réservation annulée",{client:r.guest,chambre:ROOMS.find(rm=>rm.id===r.roomId)?.number});setModal({type:"detail",data:{...r,status:"cancelled"}});}}>Annuler</button>}
                   {!r.paid&&r.status!=="blocked"&&<button className="btn-outline" onClick={()=>{markPaid(r.id);setModal({type:"detail",data:{...r,paid:true}});}}>Marquer payé</button>}
                   {!["blocked","cancelled"].includes(r.status)&&<button className="btn-outline" onClick={()=>openInvoice(r)}>Facture</button>}
@@ -2809,6 +2915,98 @@ function App({user,onLogout}){
       })()}
       </div>{/* fin contenu principal */}
     </div>
+
+    {/* ══ MODAL PROLONGER SÉJOUR ══ */}
+    {modal?.type==="prolonger"&&ReactDOM.createPortal((()=>{
+          const r=modal.data;
+          const room=ROOMS.find(rm=>rm.id===r.roomId);
+          const newCo=modal.newCheckout;
+          // Vérifier si la chambre est libre après le checkout actuel
+          const conflit=newCo>r.checkout?reservations.find(res=>
+            res.roomId===r.roomId&&
+            res.id!==r.id&&
+            ["confirmed","checkedin","pending","blocked"].includes(res.status)&&
+            res.checkin>=r.checkout&&
+            res.checkin<newCo
+          ):null;
+          const nNow=Math.max(0,(new Date(r.checkout)-new Date(r.checkin))/86400000);
+          const nNew=Math.max(0,(new Date(newCo)-new Date(r.checkin))/86400000);
+          const nExtra=nNew-nNow;
+          const TARIFS={single:100,double:160,triple:220,quad:280,suite:200};
+          const typeMap={Single:"single",Double:"double",Twin:"double",Triple:"triple",Suite:"suite"};
+          const prix=r.customPrice!==undefined?r.customPrice:
+            Math.round((TARIFS[r.billingType||(typeMap[room?.type]||"double")]||160)*(1-(r.remise||0)/100)*100)/100;
+          const coutExtra=Math.round(nExtra*prix*100)/100;
+          return(
+            <div style={{position:"fixed",inset:0,background:"rgba(42,30,8,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,padding:20}} onClick={closeModal}>
+              <div style={{background:"#fff",borderRadius:12,padding:"28px 32px",maxWidth:420,width:"100%",boxShadow:"0 8px 40px rgba(42,30,8,0.18)"}} onClick={e=>e.stopPropagation()}>
+                <h2 style={{fontSize:20,fontWeight:500,marginBottom:4,fontFamily:'"Cormorant Garamond",serif'}}>📅 Prolonger le séjour</h2>
+                <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,color:"#aaa",marginBottom:4}}>
+                  checkout actuel: {r.checkout} | nouveau: {newCo} | conflit: {String(!!conflit)}
+                </p>
+                <p style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#8a7040",marginBottom:20}}>
+                  {r.guest} — Ch. {room?.number}
+                </p>
+                <div style={{background:"#faf8f5",borderRadius:8,padding:"12px 16px",marginBottom:16,display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+                  <div>
+                    <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Arrivée</p>
+                    <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:600}}>{new Date(r.checkin+"T12:00:00").toLocaleDateString("fr-FR")}</p>
+                  </div>
+                  <div>
+                    <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Départ actuel</p>
+                    <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:600,color:"#c95050"}}>{new Date(r.checkout+"T12:00:00").toLocaleDateString("fr-FR")}</p>
+                  </div>
+                </div>
+                <div style={{marginBottom:16}}>
+                  <label style={{display:"block",fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7a65",textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>
+                    Nouveau départ *
+                  </label>
+                  <input type="date" value={newCo} min={r.checkout}
+                    onChange={e=>setModal(m=>({...m,newCheckout:e.target.value}))}
+                    style={{fontSize:14,padding:"9px 12px",width:"100%"}}/>
+                </div>
+                {newCo>r.checkout&&(
+                  <div style={{background:conflit?"#fdf0f0":"#f0faf5",border:"1px solid "+(conflit?"#e0a0a0":"#a0d8b8"),borderRadius:8,padding:"10px 14px",marginBottom:16}}>
+                    {conflit?(
+                      <p style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#c95050",fontWeight:700}}>
+                        ⚠️ Chambre déjà réservée à partir du {new Date(conflit.checkin+"T12:00:00").toLocaleDateString("fr-FR")} ({conflit.guest})
+                      </p>
+                    ):(
+                      <>
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#2d7a4f",fontWeight:700,marginBottom:4}}>✅ Chambre disponible</p>
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#6a5530"}}>
+                          +{nExtra} nuit{nExtra>1?"s":""} × {prix.toFixed(3)} TND = <strong>{coutExtra.toFixed(3)} TND</strong> supplémentaires
+                        </p>
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040",marginTop:2}}>
+                          Total : {nNew} nuits — {(nNew*prix).toFixed(3)} TND
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+                <div style={{display:"flex",justifyContent:"flex-end",gap:8}}>
+                  <button className="btn-ghost" onClick={closeModal}>Annuler</button>
+                  <button className="btn-gold"
+                    disabled={!newCo||newCo<=r.checkout||!!conflit}
+                    style={{opacity:(!newCo||newCo<=r.checkout||!!conflit)?0.4:1,cursor:(!newCo||newCo<=r.checkout||!!conflit)?"not-allowed":"pointer"}}
+                    onClick={async(e)=>{
+                      e.stopPropagation();
+                      try{
+                        const {error:pErr}=await sb.from("reservations").update({checkout:newCo}).eq("id",r.id);
+                        if(pErr){console.error("prolonger error:",pErr);showToast("Erreur: "+pErr.message,"error");return;}
+                        setReservations(prev=>prev.map(x=>x.id===r.id?{...x,checkout:newCo}:x));
+                        addLog("📅 Séjour prolongé",{client:r.guest,chambre:room?.number,ancien_checkout:r.checkout,nouveau_checkout:newCo});
+                        showToast("Séjour prolongé jusqu'au "+new Date(newCo+"T12:00:00").toLocaleDateString("fr-FR")+" ✓");
+                        closeModal();
+                      }catch(e){console.error("prolonger catch:",e);showToast("Erreur","error");}
+                    }}>
+                    ✓ Confirmer la prolongation
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })(),document.body)}
 
     {showJournal&&(
       <>

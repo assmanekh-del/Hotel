@@ -299,7 +299,7 @@ function ChargesView({sb,LOGO}){
   }
 
   function openNew(){
-    setForm({date:getToday(),fournisseur:"",description:"",categorie:"Électricité",montant_ht:0,tva:0,montant_ttc:0,statut:"a_payer",notes:""});
+    setForm({date:getToday(),fournisseur:"",description:"",categorie:"Électricité",montant_ht:0,tva:0,montant_ttc:0,statut:"a_payer",notes:"",numero_facture:""});
     setModal("new");
   }
 
@@ -314,6 +314,7 @@ function ChargesView({sb,LOGO}){
       date:form.date,
       fournisseur:form.fournisseur||null,
       description:form.description,
+      numero_facture:form.numero_facture||null,
       categorie:form.categorie||"Autre",
       montant_ht:parseFloat(form.montant_ht)||0,
       tva:parseFloat(form.tva)||0,
@@ -459,7 +460,7 @@ function ChargesView({sb,LOGO}){
                       <span style={{fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,padding:"3px 8px",borderRadius:10,background:bg,color}}>{c.categorie}</span>
                     </td>
                     <td style={{padding:"10px 12px",fontWeight:500,color:"#2a1e08"}}>{c.description}</td>
-                    <td style={{padding:"10px 12px",fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040"}}>{c.fournisseur||"—"}</td>
+                    <td style={{padding:"10px 12px",fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040"}}>{c.fournisseur||"—"}{c.numero_facture&&<span style={{display:"block",fontSize:9,color:"#b0a070"}}>N° {c.numero_facture}</span>}</td>
                     <td style={{padding:"10px 12px",textAlign:"right",fontFamily:'"Jost",sans-serif',fontSize:11,color:"#6a5a45"}}>{(c.montant_ht||0).toFixed(3)}</td>
                     <td style={{padding:"10px 12px",textAlign:"right",fontFamily:'"Jost",sans-serif',fontSize:11,color:"#6a5a45"}}>{(c.tva||0).toFixed(3)}</td>
                     <td style={{padding:"10px 12px",textAlign:"right",fontWeight:700,color:"#2a1e08"}}>{(c.montant_ttc||0).toFixed(3)}</td>
@@ -507,9 +508,15 @@ function ChargesView({sb,LOGO}){
                 <label>Description *</label>
                 <input value={form.description||""} onChange={e=>setForm(f=>({...f,description:e.target.value}))} placeholder="ex : Facture STEG Avril 2026"/>
               </div>
-              <div className="form-group">
-                <label>Fournisseur</label>
-                <input value={form.fournisseur||""} onChange={e=>setForm(f=>({...f,fournisseur:e.target.value}))} placeholder="ex : STEG, SONEDE, …"/>
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+                <div className="form-group">
+                  <label>Fournisseur</label>
+                  <input value={form.fournisseur||""} onChange={e=>setForm(f=>({...f,fournisseur:e.target.value}))} placeholder="ex : STEG, SONEDE, …"/>
+                </div>
+                <div className="form-group">
+                  <label>N° Facture fournisseur</label>
+                  <input value={form.numero_facture||""} onChange={e=>setForm(f=>({...f,numero_facture:e.target.value}))} placeholder="ex : FAC-2026-042"/>
+                </div>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
                 <div className="form-group">
