@@ -207,7 +207,7 @@ function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture
         </div>
         <div>
           <label style={{display:"block",fontSize:10,fontWeight:700,color:"#8a7a65",textTransform:"uppercase",letterSpacing:.8,marginBottom:4,fontFamily:'"Jost",sans-serif'}}>Notes</label>
-          <textarea value={fi.notes} onChange={e=>setFI(f=>({...f,notes:e.target.value}))} rows={2} placeholder="Remarques..." style={{fontSize:12,padding:"7px 10px",resize:"none"}}/>
+          <textarea value={fi.notes} onChange={e=>setFI(f=>({...f,notes:e.target.value}))} rows={2} placeholder="Remarques..." style={{fontSize:12,padding:"7px 10px",resize:"none",width:"100%"}}/>
         </div>
       </div>
       <div style={{display:"flex",justifyContent:"flex-end",gap:8,marginTop:14,paddingTop:12,borderTop:"1px solid #f0ebe3"}}>

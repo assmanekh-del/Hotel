@@ -2488,7 +2488,7 @@ function App({user,onLogout}){
                       const totalTTC_S=Math.round((n*prixTTC_S+n*extraTTC_S)*100)/100;
                       const totalHT_S=Math.round((totalTTC_S/1.07)*100)/100;
                       const num=await nextInvNum();
-                      const ok=await saveFacture({numero:num,type:'reservation',client:r.guest,phone:r.phone||null,email:r.email||null,cin:r.cin||null,reservation_id:r.id,montant_ht:totalHT_S,tva:Math.round((totalTTC_S-totalHT_S)*100)/100,timbre:1,montant_ttc:Math.round((totalTTC_S+1)*100)/100,remise:modal.remise||0,notes:r.notes||null,lignes:[{desc:"Chambre "+room?.number+" × "+n+" nuits",qty:n,prixTTC:prixTTC_S}]});
+                      const ok=await saveFacture({numero:num,type:'reservation',client:r.guest,phone:r.phone||null,email:r.email||null,cin:r.cin||null,reservation_id:r.id,montant_ht:totalHT_S,tva:Math.round((totalTTC_S-totalHT_S)*100)/100,timbre:1,montant_ttc:Math.round((totalTTC_S+1)*100)/100,remise:modal.remise||0,notes:r.notes||null,mode_paiement:r.modePaiement||'especes',lignes:[{desc:"Chambre "+room?.number+" × "+n+" nuits",qty:n,prixTTC:prixTTC_S}]});
                       if(ok){setModal(m=>({...m,saved:true,invNum:num}));showToast('Facture F-'+num+' enregistrée ✓','success');}
                       else showToast('Erreur enregistrement','error');
                     }}>💾 Enregistrer</button>
