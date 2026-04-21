@@ -207,6 +207,9 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal}){
                   ${f.paid?"✓ Payé":"À encaisser"}
                 </span>
               </td>
+              <td style="padding:6px 8px;font-size:10px;text-align:center">
+                ${{especes:"💵 Espèces",carte:"💳 Carte",cheque:"📝 Chèque",virement:"🏦 Virement"}[f.mode_paiement||"especes"]||"💵 Espèces"}
+              </td>
             </tr>
           `).join("");
           const html=`
@@ -228,7 +231,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal}){
             <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:16px">
               <thead>
                 <tr style="background:#2c2416;color:#f5d984">
-                  ${["Date","N° Facture","Client","HT (TND)","TVA (TND)","TTC (TND)","Échéance","Statut"].map(h=>`<th style="padding:8px;text-align:${["HT (TND)","TVA (TND)","TTC (TND)"].includes(h)?"right":"left"};font-size:9px;letter-spacing:0.5px">${h}</th>`).join("")}
+                  ${["Date","N° Facture","Client","HT (TND)","TVA (TND)","TTC (TND)","Échéance","Statut","Paiement"].map(h=>`<th style="padding:8px;text-align:${["HT (TND)","TVA (TND)","TTC (TND)"].includes(h)?"right":"left"};font-size:9px;letter-spacing:0.5px">${h}</th>`).join("")}
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -291,7 +294,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal}){
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:11}}>
                   <thead style={{position:"sticky",top:0}}>
                     <tr style={{background:"#2c2416"}}>
-                      {["Date","N° Facture","Client","HT","TVA","TTC","Échéance","Statut"].map((h,i)=>(
+                      {["Date","N° Facture","Client","HT","TVA","TTC","Échéance","Statut","Paiement"].map((h,i)=>(
                         <th key={h} style={{padding:"8px 8px",textAlign:i>=3&&i<=5?"right":"left",fontSize:9,fontWeight:700,color:"#f5d984",textTransform:"uppercase",letterSpacing:.5}}>{h}</th>
                       ))}
                     </tr>
@@ -312,6 +315,18 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal}){
                           <span style={{fontSize:9,background:f.paid?"#d4f0e0":"#fad4d4",color:f.paid?"#2d7a4f":"#9a2020",padding:"2px 7px",borderRadius:8,fontWeight:700}}>
                             {f.paid?"✓ Payé":"À encaisser"}
                           </span>
+                        </td>
+                        <td style={{padding:"7px 8px",textAlign:"center"}}>
+                          <select value={f.mode_paiement||"especes"} onChange={async e=>{
+                            const mode=e.target.value;
+                            await sb.from('factures').update({mode_paiement:mode}).eq('id',f.id);
+                            setFactures(prev=>prev.map(x=>x.id===f.id?{...x,mode_paiement:mode}:x));
+                          }} style={{fontSize:10,padding:"2px 4px",border:"1px solid #e8d8b0",borderRadius:4,background:"#fef9f0",cursor:"pointer"}}>
+                            <option value="especes">💵</option>
+                            <option value="carte">💳</option>
+                            <option value="cheque">📝</option>
+                            <option value="virement">🏦</option>
+                          </select>
                         </td>
                       </tr>
                     ))}
