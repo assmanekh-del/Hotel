@@ -435,6 +435,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal}){
                       }catch(e){alert('Erreur suppression');}
                     }}>🗑 Supprimer</button>}
                     {!editMode&&(
+                      <>
                       <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",fontFamily:'"Jost",sans-serif',fontSize:12,color:"#6a5530",userSelect:"none"}}>
                         <input type="checkbox" checked={showCachetPrint} onChange={e=>setShowCachetPrint(e.target.checked)} style={{width:14,height:14}}/>
                         🏷 Cachet
@@ -443,6 +444,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal}){
                         <input type="checkbox" checked={showRibPrint} onChange={e=>setShowRibPrint(e.target.checked)} style={{width:14,height:14}}/>
                         🏦 RIB
                       </label>
+                      </>
                     )}
                     {!editMode&&<button className="btn-gold" onClick={()=>doPrint({...fact,lignes:fact.lignes,showCachet:showCachetPrint,showRib:showRibPrint})}>🖨 Imprimer</button>}
                   </div>
