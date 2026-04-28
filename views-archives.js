@@ -1,4 +1,4 @@
-function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal}){
+function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFacture,showToast}){
   const [factures,setFactures]=React.useState([]);
   const [loading,setLoading]=React.useState(true);
   const [search,setSearch]=React.useState("");
@@ -156,9 +156,16 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal}){
               </div>
               <p style={{fontFamily:'"Jost",sans-serif',fontSize:14,fontWeight:700,color:"#2a1e08",textAlign:"right"}}>{(f.montant_ttc||0).toFixed(3)}<span style={{fontSize:9,color:"#8a7040",marginLeft:2}}>TND</span></p>
               <div style={{display:"flex",gap:6,alignItems:"center"}}>
+                {f.annulee?(
+                  <div style={{display:"flex",gap:6,flex:1}}>
+                    <span style={{fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#9a2020",background:"#fdf0f0",padding:"4px 8px",borderRadius:6,border:"1px solid #e0a0a0"}}>🚫 Annulée</span>
+                    {restoreFacture&&<button style={{fontSize:11,padding:"4px 10px",background:"#f0faf5",border:"1.5px solid #a0d8b8",color:"#2d7a4f",borderRadius:6,cursor:"pointer",fontFamily:'"Jost",sans-serif',fontWeight:600}} onClick={async()=>{await restoreFacture(f.numero);showToast&&showToast('Facture restaurée ✓');}}>♻️ Restaurer</button>}
+                  </div>
+                ):(
                 <button style={{flex:1,fontSize:11,padding:"6px 8px",background:"#fef9f0",border:"1.5px solid #d4c5a0",color:"#6a5530",borderRadius:6,cursor:"pointer",fontFamily:'"Jost",sans-serif',fontWeight:600,letterSpacing:.5}} onClick={()=>setModalFact(f)}>
                   🖨 Imprimer
                 </button>
+                )}
                 <button title="Annuler cette facture" style={{padding:"6px 9px",background:"#fdf0f0",border:"1.5px solid #e0a0a0",color:"#9a2020",borderRadius:6,cursor:"pointer",fontSize:13,fontWeight:700,lineHeight:1}} onClick={async()=>{
                   if(!confirm('Supprimer la facture '+f.numero+' des archives ?\n\nCette action est irréversible.')) return;
                   try{
