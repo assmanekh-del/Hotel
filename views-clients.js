@@ -209,7 +209,7 @@ function FichierClientsView({sb, showToast}) {
                 <div key={f.id} style={{padding:"10px 20px",borderBottom:"1px solid #f5efe5",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
                   <div>
                     <p style={{fontFamily:'"Jost",sans-serif',fontSize:12,fontWeight:700,color:"#2a1e08"}}>{f.numero}</p>
-                    <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#8a7040"}}>{new Date(f.created_at).toLocaleDateString("fr-FR")} · {{{especes:"💵",carte:"💳",cheque:"📝",virement:"🏦"}}[f.mode_paiement||"especes"]||"💵"}</p>
+                    <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#8a7040"}}>{new Date(f.created_at).toLocaleDateString("fr-FR")} · {({especes:"💵",carte:"💳",cheque:"📝",virement:"🏦"})[f.mode_paiement||"especes"]||"💵"}</p>
                   </div>
                   <div style={{textAlign:"right"}}>
                     <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:700,color:f.paid?"#2d7a4f":"#c95050"}}>{(f.montant_ttc||0).toFixed(3)} TND</p>
