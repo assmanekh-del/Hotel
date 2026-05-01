@@ -797,4 +797,3 @@ function LivreDePolice({reservations,ROOMS,LOGO}){
     </div>
   );
 }
-
