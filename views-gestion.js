@@ -279,7 +279,7 @@ function ChargesView({sb,LOGO}){
   const [loading,setLoading]=useState(true);
   const [modal,setModal]=useState(null); // null | "new" | "edit"
   const [form,setForm]=useState({});
-  const [filterMois,setFilterMois]=useState(String(new Date().getMonth()+1).padStart(2,'0'));
+  const [filterMois,setFilterMois]=useState("");
   const [filterAnnee,setFilterAnnee]=useState(String(new Date().getFullYear()));
   const [filterCat,setFilterCat]=useState("all");
   const [filterStatut,setFilterStatut]=useState("all");
@@ -311,12 +311,8 @@ function ChargesView({sb,LOGO}){
         <td style="padding:6px 8px;font-size:10px;color:#8a7040">${c.categorie||"—"}</td>
         <td style="padding:6px 8px;font-size:10px;text-align:right">${(c.montant_ht||0).toFixed(3)}</td>
         <td style="padding:6px 8px;font-size:10px;text-align:right">${(c.tva||0).toFixed(3)}</td>
-        <td style="padding:6px 8px;font-size:10px;text-align:right;font-weight:700">${(c.montant_ttc||0).toFixed(3)}</td>
-        <td style="padding:6px 8px;font-size:10px;text-align:center">
-          <span style="background:${c.statut==="paye"?"#d4f0e0":"#fad4d4"};color:${c.statut==="paye"?"#2d7a4f":"#9a2020"};padding:2px 6px;border-radius:8px;font-size:9px;font-weight:700">
-            ${c.statut==="paye"?"✓ Payé":"À payer"}
-          </span>
-        </td>
+        <td style="padding:6px 8px;font-size:10px;text-align:right">${(c.timbre||0)>0?(c.timbre||0).toFixed(3):"—"}</td>
+        <td style="padding:6px 8px;font-size:10px;text-align:right;font-weight:700">${((c.montant_ttc||0)+(c.timbre||0)).toFixed(3)}</td>
       </tr>
     `).join("");
     const html=`<html><head><meta charset="UTF-8"/>
@@ -336,15 +332,15 @@ function ChargesView({sb,LOGO}){
       </div>
       <table style="margin-bottom:16px">
         <thead><tr style="background:#2c2416;color:#f5d984">
-          ${["Date","Fournisseur","Description","Catégorie","HT (TND)","TVA (TND)","TTC (TND)","Statut"].map(h=>`<th style="padding:8px;text-align:${["HT (TND)","TVA (TND)","TTC (TND)"].includes(h)?"right":"left"};font-size:9px">${h}</th>`).join("")}
+          ${["Date","Fournisseur","Description","Catégorie","HT (TND)","TVA (TND)","Timbre","Total TTC"].map(h=>`<th style="padding:8px;text-align:${["HT (TND)","TVA (TND)","Timbre","Total TTC"].includes(h)?"right":"left"};font-size:9px">${h}</th>`).join("")}
         </tr></thead>
         <tbody>${rows}</tbody>
         <tfoot><tr style="background:${G2b};color:#fff;font-weight:700">
           <td colspan="4" style="padding:8px;font-size:11px">TOTAL — ${liste.length} charge${liste.length>1?"s":""}</td>
           <td style="padding:8px;text-align:right;font-size:11px">${totalHT.toFixed(3)}</td>
           <td style="padding:8px;text-align:right;font-size:11px">${totalTVA.toFixed(3)}</td>
+          <td style="padding:8px;text-align:right;font-size:11px">${Math.round(liste.reduce((a,c)=>a+(c.timbre||0),0)*1000)/1000}</td>
           <td style="padding:8px;text-align:right;font-size:13px">${totalTTC.toFixed(3)}</td>
-          <td></td>
         </tr></tfoot>
       </table>
       <p style="font-size:8px;color:#a09080;border-top:1px solid #e0d8cc;padding-top:8px">Document généré automatiquement — IMPAVID HOTEL</p>
@@ -355,7 +351,7 @@ function ChargesView({sb,LOGO}){
   }
 
   function openNew(){
-    setForm({date:getToday(),fournisseur:"",description:"",categorie:"Électricité",montant_ht:0,tva:0,montant_ttc:0,statut:"a_payer",notes:"",numero_facture:"",mode_paiement:"especes"});
+    setForm({date:getToday(),fournisseur:"",description:"",categorie:"Électricité",montant_ht:0,tva:0,montant_ttc:0,timbre:0,statut:"a_payer",notes:"",numero_facture:"",mode_paiement:"especes"});
     setModal("new");
   }
 
@@ -376,6 +372,7 @@ function ChargesView({sb,LOGO}){
       montant_ht:parseFloat(form.montant_ht)||0,
       tva:parseFloat(form.tva)||0,
       montant_ttc:parseFloat(form.montant_ttc)||0,
+      timbre:parseFloat(form.timbre)||0,
       statut:form.statut||"a_payer",
       notes:form.notes||null,
     };
@@ -421,8 +418,8 @@ function ChargesView({sb,LOGO}){
     return matchMois&&matchAnnee&&matchCat&&matchStatut;
   });
 
-  const totalTTC=Math.round(liste.reduce((a,c)=>a+(c.montant_ttc||0),0)*1000)/1000;
-  const totalPaye=Math.round(liste.filter(c=>c.statut==="paye").reduce((a,c)=>a+(c.montant_ttc||0),0)*1000)/1000;
+  const totalTTC=Math.round(liste.reduce((a,c)=>a+(c.montant_ttc||0)+(c.timbre||0),0)*1000)/1000;
+  const totalPaye=Math.round(liste.filter(c=>c.statut==="paye").reduce((a,c)=>a+(c.montant_ttc||0)+(c.timbre||0),0)*1000)/1000;
   const totalAPayer=Math.round((totalTTC-totalPaye)*1000)/1000;
 
   // Couleurs catégories
@@ -596,6 +593,10 @@ function ChargesView({sb,LOGO}){
                 <div className="form-group">
                   <label>Montant TTC</label>
                   <input type="number" value={form.montant_ttc||""} onChange={e=>setForm(f=>({...f,montant_ttc:e.target.value}))} placeholder="0.000" style={{fontWeight:700}}/>
+                </div>
+                <div className="form-group">
+                  <label>🏛 Droit de timbre</label>
+                  <input type="number" min="0" step="0.001" value={form.timbre||""} onChange={e=>setForm(f=>({...f,timbre:e.target.value}))} placeholder="0.000 (optionnel)"/>
                 </div>
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
@@ -797,3 +798,4 @@ function LivreDePolice({reservations,ROOMS,LOGO}){
     </div>
   );
 }
+

@@ -142,7 +142,7 @@ function App({user,onLogout}){
   }
 
   function openFreeInvoice(){
-    setFreeInvoice({client:"",adresse:"",phone:"",email:"",mf:"",lines:[{code:"",desc:"",qty:1,prixTTC:0}],remise:0,notes:"",showCachet:true,showTimbre:true,invNum:null,saved:false,mode_paiement:"especes"});
+    setFreeInvoice({client:"",adresse:"",phone:"",email:"",mf:"",lines:[{code:"",desc:"",qty:1,prixTTC:0}],remise:0,notes:"",showCachet:true,invNum:null,saved:false,mode_paiement:"especes"});
     setModal({type:"freeInvoice"});
   }
 

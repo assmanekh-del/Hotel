@@ -51,7 +51,7 @@ function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture
   const remise=parseFloat(fi.remise)||0;
   const remiseMont=Math.round(grandTTC*(remise/100)*100)/100;
   const avantTimbre=Math.round((grandTTC-remiseMont)*100)/100;
-  const timbre=fi.showTimbre!==false?1:0;
+  const timbre=1;
   const netAPayer=Math.round((avantTimbre+timbre)*100)/100;
   const invNum=fi.invNum||"00000";
 
@@ -151,11 +151,7 @@ function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture
               style={{width:20,height:20,cursor:"pointer",accentColor:"#c9952a"}}/>
             <span style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#6a5530"}}>RIB</span>
           </label>
-          <label style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",marginLeft:8}}>
-            <input type="checkbox" checked={fi.showTimbre!==false} onChange={e=>setFI(f=>({...f,showTimbre:e.target.checked}))}
-              style={{width:20,height:20,cursor:"pointer",accentColor:"#e05a20"}}/>
-            <span style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#6a5530"}}>Timbre</span>
-          </label>
+
         </div>
       </div>
       {/* Lignes */}
@@ -232,7 +228,7 @@ function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture
             const remMont=Math.round(gTTC*(rem/100)*100)/100;
             const net=Math.round((gTTC-remMont+1)*100)/100;
             const num=await nextInvNum();setFI(f=>({...f,invNum:num}));
-            const ok=await saveFacture({numero:num,type:'libre',client:fi.client||null,adresse:fi.adresse||null,phone:fi.phone||null,email:fi.email||null,mf:fi.mf||null,montant_ht:gHT,tva:Math.round((gTTC-gHT)*100)/100,timbre:fi.showTimbre!==false?1:0,montant_ttc:net,remise:rem,notes:fi.notes||null,lignes:fi.lines,mode_paiement:fi.mode_paiement||"especes"});
+            const ok=await saveFacture({numero:num,type:'libre',client:fi.client||null,adresse:fi.adresse||null,phone:fi.phone||null,email:fi.email||null,mf:fi.mf||null,montant_ht:gHT,tva:Math.round((gTTC-gHT)*100)/100,timbre:1,montant_ttc:net,remise:rem,notes:fi.notes||null,lignes:fi.lines,mode_paiement:fi.mode_paiement||"especes"});
             if(ok){setFI(f=>({...f,saved:true}));showToast('Facture F-'+fi.invNum+' enregistrée ✓','success');}
             else showToast('Erreur enregistrement','error');
           }}>💾 Enregistrer</button>
@@ -335,7 +331,7 @@ function FreeInvoiceModal({fi,setFreeInvoice,sb,REFS,LOGO,closeModal,saveFacture
               </tr>
             )}
             <tr style={{borderBottom:"1px solid #e0d8cc",background:"#faf8f5"}}>
-              {fi.showTimbre!==false&&<td style={{padding:"8px 16px",color:"#6a5a45"}}>Timbre fiscal</td>}
+              <td style={{padding:"8px 16px",color:"#6a5a45"}}>Timbre fiscal</td>
               <td style={{padding:"8px 16px",textAlign:"right",fontWeight:600,color:"#6a5a45"}}>1,000 TND</td>
             </tr>
             <tr style={{background:G2}}>
