@@ -200,6 +200,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
         function printSuivi(){
           const G2b="#8B6434";
           // Construire HTML du rapport
+          const totalTimbre=Math.round(listeSuivi.filter(f=>f.type!=="devis").length*1000)/1000;
           const rows=listeSuivi.map((f,i)=>`
             <tr style="border-bottom:1px solid #f0ebe3;background:${i%2===0?"#fff":"#faf8f5"}">
               <td style="padding:6px 8px;font-size:10px;color:#8a7040">${new Date(f.created_at).toLocaleDateString("fr-FR")}</td>
@@ -207,16 +208,8 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
               <td style="padding:6px 8px;font-size:10px;color:#2c2416">${f.client||"—"}</td>
               <td style="padding:6px 8px;font-size:10px;text-align:right">${(f.montant_ht||0).toFixed(3)}</td>
               <td style="padding:6px 8px;font-size:10px;text-align:right">${(f.tva||0).toFixed(3)}</td>
+              <td style="padding:6px 8px;font-size:10px;text-align:right">${(f.timbre||0).toFixed(3)}</td>
               <td style="padding:6px 8px;font-size:10px;text-align:right;font-weight:700">${(f.montant_ttc||0).toFixed(3)}</td>
-              <td style="padding:6px 8px;font-size:10px;text-align:center">${f.echeance?new Date(f.echeance).toLocaleDateString("fr-FR"):"—"}</td>
-              <td style="padding:6px 8px;font-size:10px;text-align:center">
-                <span style="background:${f.paid?"#d4f0e0":"#fad4d4"};color:${f.paid?"#2d7a4f":"#9a2020"};padding:2px 6px;border-radius:8px;font-size:9px;font-weight:700">
-                  ${f.paid?"✓ Payé":"À encaisser"}
-                </span>
-              </td>
-              <td style="padding:6px 8px;font-size:10px;text-align:center">
-                ${{especes:"💵 Espèces",carte:"💳 Carte",cheque:"📝 Chèque",virement:"🏦 Virement"}[f.mode_paiement||"especes"]||"💵 Espèces"}
-              </td>
             </tr>
           `).join("");
           const html=`
@@ -238,7 +231,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
             <table style="width:100%;border-collapse:collapse;font-size:10px;margin-bottom:16px">
               <thead>
                 <tr style="background:#2c2416;color:#f5d984">
-                  ${["Date","N° Facture","Client","HT (TND)","TVA (TND)","TTC (TND)","Échéance","Statut","Paiement"].map(h=>`<th style="padding:8px;text-align:${["HT (TND)","TVA (TND)","TTC (TND)"].includes(h)?"right":"left"};font-size:9px;letter-spacing:0.5px">${h}</th>`).join("")}
+                  ${["Date","N° Facture","Client","HT (TND)","TVA (TND)","Timbre","TTC (TND)"].map(h=>`<th style="padding:8px;text-align:${["HT (TND)","TVA (TND)","Timbre","TTC (TND)"].includes(h)?"right":"left"};font-size:9px;letter-spacing:0.5px">${h}</th>`).join("")}
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
@@ -247,8 +240,8 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
                   <td colspan="3" style="padding:8px;font-size:11px">TOTAL — ${listeSuivi.length} facture${listeSuivi.length>1?"s":""}</td>
                   <td style="padding:8px;text-align:right;font-size:11px">${totalHT.toFixed(3)}</td>
                   <td style="padding:8px;text-align:right;font-size:11px">${totalTVA.toFixed(3)}</td>
+                  <td style="padding:8px;text-align:right;font-size:11px">${totalTimbre.toFixed(3)}</td>
                   <td style="padding:8px;text-align:right;font-size:13px">${totalTTC.toFixed(3)}</td>
-                  <td colspan="2"></td>
                 </tr>
               </tfoot>
             </table>
