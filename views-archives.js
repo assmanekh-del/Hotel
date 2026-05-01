@@ -1,4 +1,4 @@
-function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFacture,showToast}){
+function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFacture,showToast,REFS}){
   const [factures,setFactures]=React.useState([]);
   const [loading,setLoading]=React.useState(true);
   const [search,setSearch]=React.useState("");
@@ -496,8 +496,19 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
                         <tbody>
                           {ed.lignes.map((l,i)=>(
                             <tr key={i} style={{borderBottom:"1px solid #f0ebe3"}}>
-                              <td style={{padding:"4px 4px"}}><input value={l.code||""} onChange={e=>{const nl=[...ed.lignes];nl[i]={...nl[i],code:e.target.value};setEd(x=>({...x,lignes:nl}));}} style={{width:60,fontSize:11,padding:"4px 6px"}}/></td>
-                              <td style={{padding:"4px 4px"}}><input value={l.desc||""} onChange={e=>{const nl=[...ed.lignes];nl[i]={...nl[i],desc:e.target.value};setEd(x=>({...x,lignes:nl}));}} style={{width:"100%",fontSize:11,padding:"4px 6px"}}/></td>
+                              <td style={{padding:"4px 4px"}}>
+                                <select value={l.code||""} onChange={e=>{
+                                  const nl=[...ed.lignes];
+                                  const ref=REFS.find(r=>r.code===e.target.value);
+                                  nl[i]={...nl[i],code:e.target.value,desc:ref?ref.label:nl[i].desc,prixTTC:ref?ref.prixTTC:nl[i].prixTTC};
+                                  setEd(x=>({...x,lignes:nl}));
+                                }} style={{width:110,fontSize:11,padding:"4px 6px"}}>
+                                  <option value="">— Réf —</option>
+                                  {REFS.map(r=><option key={r.code} value={r.code}>{r.code}</option>)}
+                                  <option value="AUTRE">Autre</option>
+                                </select>
+                              </td>
+                              <td style={{padding:"4px 4px"}}><input value={l.desc||""} onChange={e=>{const nl=[...ed.lignes];nl[i]={...nl[i],desc:e.target.value};setEd(x=>({...x,lignes:nl}));}} placeholder={l.code&&l.code!=="AUTRE"?"":""} style={{width:"100%",fontSize:11,padding:"4px 6px"}}/></td>
                               <td style={{padding:"4px 4px"}}><input type="number" value={l.qty||1} onChange={e=>{const nl=[...ed.lignes];nl[i]={...nl[i],qty:e.target.value};setEd(x=>({...x,lignes:nl}));}} style={{width:50,fontSize:11,padding:"4px 6px",textAlign:"right"}}/></td>
                               <td style={{padding:"4px 4px"}}><input type="number" value={l.prixTTC||0} onChange={e=>{const nl=[...ed.lignes];nl[i]={...nl[i],prixTTC:e.target.value};setEd(x=>({...x,lignes:nl}));}} style={{width:80,fontSize:11,padding:"4px 6px",textAlign:"right"}}/></td>
                               <td style={{padding:"4px 4px",textAlign:"center"}}><button onClick={()=>{const nl=ed.lignes.filter((_,j)=>j!==i);setEd(x=>({...x,lignes:nl}));}} style={{background:"#fdf0f0",border:"1px solid #e0a0a0",color:"#9a2020",borderRadius:4,padding:"2px 7px",cursor:"pointer",fontSize:12}}>×</button></td>

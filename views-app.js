@@ -1271,7 +1271,7 @@ function App({user,onLogout}){
         })()}
 
         {/* ── ARCHIVES FACTURES ── */}
-        {view==="archives"&&<ArchivesView sb={sb} openDetail={openDetail} ROOMS={ROOMS} LOGO={LOGO} G2="#8B6434" doPrint={doPrint} setModal={setModal} restoreFacture={restoreFacture} showToast={showToast}/>}
+        {view==="archives"&&<ArchivesView sb={sb} openDetail={openDetail} ROOMS={ROOMS} LOGO={LOGO} G2="#8B6434" doPrint={doPrint} setModal={setModal} restoreFacture={restoreFacture} showToast={showToast} REFS={REFS}/>}
         {/* ══ MODAL MODE DE PAIEMENT ══ */}
         {paiementModal&&(()=>{
           const r=paiementModal.data;
