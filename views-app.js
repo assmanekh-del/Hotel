@@ -1286,7 +1286,7 @@ function App({user,onLogout}){
           // Grouper par mois/année pour le sélecteur
           const moisDispos=[...new Set(terminees.map(r=>r.checkout.slice(0,7)))].sort((a,b)=>b.localeCompare(a));
 
-          return <HistoriqueView terminees={terminees} moisDispos={moisDispos} G2={G2} openDetail={openDetail}/>;
+          return <HistoriqueView terminees={terminees} moisDispos={moisDispos} G2={G2} openDetail={openDetail} userRole={userRole}/>;
         })()}
 
         {/* ── ARCHIVES FACTURES ── */}

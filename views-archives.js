@@ -609,8 +609,9 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
   );
 }
 
-function HistoriqueView({terminees,moisDispos,G2,openDetail}){
-  const [moisSel,setMoisSel]=React.useState(moisDispos[0]||"");
+function HistoriqueView({terminees,moisDispos,G2,openDetail,userRole}){
+  const currentMois=new Date().toISOString().slice(0,7);
+  const [moisSel,setMoisSel]=React.useState(userRole!=="gerant"?(moisDispos.includes(currentMois)?currentMois:moisDispos[0]||""):moisDispos[0]||"");
   const [searchH,setSearchH]=React.useState("");
   const [printMode,setPrintMode]=React.useState(false);
 
@@ -681,7 +682,7 @@ function HistoriqueView({terminees,moisDispos,G2,openDetail}){
         <div style={{background:"#faf8f5",border:"1px solid #e8ddc8",borderRadius:8,padding:"12px 18px",marginBottom:20,display:"flex",gap:32,flexWrap:"wrap"}}>
           <div><p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Total HT</p><p style={{fontFamily:'"Jost",sans-serif',fontSize:15,fontWeight:700,color:"#2a1e08"}}>{totalHT_b.toFixed(3)} TND</p></div>
           <div><p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>TVA 7%</p><p style={{fontFamily:'"Jost",sans-serif',fontSize:15,fontWeight:700,color:"#2a1e08"}}>{totalTVA.toFixed(3)} TND</p></div>
-          <div><p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Total TTC</p><p style={{fontFamily:'"Jost",sans-serif',fontSize:15,fontWeight:700,color:G2}}>{totalRev.toFixed(3)} TND</p></div>
+          {userRole==="gerant"&&<div><p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Total TTC</p><p style={{fontFamily:'"Jost",sans-serif',fontSize:15,fontWeight:700,color:G2}}>{totalRev.toFixed(3)} TND</p></div>}
           {totalRev>0&&<div style={{flex:1,display:"flex",alignItems:"center",gap:10}}>
             <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#2a8a5a",fontWeight:600,whiteSpace:"nowrap"}}>Taux encaissement : {Math.round(totalEnc/totalRev*100)}%</p>
             <div style={{flex:1,height:6,background:"#e0d8cc",borderRadius:3,overflow:"hidden"}}>
@@ -724,7 +725,7 @@ function HistoriqueView({terminees,moisDispos,G2,openDetail}){
               <p style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#6a5530",alignSelf:"center"}}>{new Date(r.checkout).toLocaleDateString("fr-FR")}</p>
               <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:600,color:"#2a1e08",alignSelf:"center"}}>{n}</p>
               <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040",alignSelf:"center"}}>{r.pension==="dp"?"DP":"LPD"}</p>
-              <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:700,color:"#2a1e08",alignSelf:"center",textAlign:"right"}}>{montant.toFixed(3)}<span style={{fontSize:9,color:"#8a7040",marginLeft:2}}>TND</span></p>
+              {userRole==="gerant"&&<p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:700,color:"#2a1e08",alignSelf:"center",textAlign:"right"}}>{montant.toFixed(3)}<span style={{fontSize:9,color:"#8a7040",marginLeft:2}}>TND</span></p>}
               <div style={{alignSelf:"center"}}>
                 <span style={{fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,padding:"3px 10px",borderRadius:12,background:r.paid?"#e8f5ee":"#fdf0f0",color:r.paid?"#2d7a4f":"#c95050"}}>
                   {r.paid?"✓ Payé":"En attente"}
