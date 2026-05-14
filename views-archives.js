@@ -665,9 +665,11 @@ function HistoriqueView({terminees,moisDispos,G2,openDetail,userRole}){
         {[
           {label:"Séjours",val:liste.length,unit:"",color:"#c9952a",bg:"#fef9f0",border:"#e8d8b0"},
           {label:"Nuits totales",val:totalNuits,unit:"",color:"#5a7fc8",bg:"#f0f4ff",border:"#c0cfee"},
-          {label:"Revenus TTC",val:totalRev.toFixed(3),unit:"TND",color:"#2a8a5a",bg:"#f0faf4",border:"#a0d8b8"},
-          {label:"Encaissé",val:totalEnc.toFixed(3),unit:"TND",color:"#2d7a4f",bg:"#e8f5ee",border:"#90c8a8"},
-          {label:"En attente",val:(Math.round((totalRev-totalEnc)*100)/100).toFixed(3),unit:"TND",color:"#c95050",bg:"#fdf0f0",border:"#e0a0a0"},
+          ...(userRole==="gerant"?[
+            {label:"Revenus TTC",val:totalRev.toFixed(3),unit:"TND",color:"#2a8a5a",bg:"#f0faf4",border:"#a0d8b8"},
+            {label:"Encaissé",val:totalEnc.toFixed(3),unit:"TND",color:"#2d7a4f",bg:"#e8f5ee",border:"#90c8a8"},
+            {label:"En attente",val:(Math.round((totalRev-totalEnc)*100)/100).toFixed(3),unit:"TND",color:"#c95050",bg:"#fdf0f0",border:"#e0a0a0"},
+          ]:[]),
         ].map(({label,val,unit,color,bg,border})=>(
           <div key={label} style={{background:bg,border:"1.5px solid "+border,borderRadius:10,padding:"14px 16px"}}>
             <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:color,textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>{label}</p>
@@ -678,11 +680,11 @@ function HistoriqueView({terminees,moisDispos,G2,openDetail,userRole}){
       </div>
 
       {/* ── RÉCAPITULATIF TVA ── */}
-      {liste.length>0&&(
+      {liste.length>0&&userRole==="gerant"&&(
         <div style={{background:"#faf8f5",border:"1px solid #e8ddc8",borderRadius:8,padding:"12px 18px",marginBottom:20,display:"flex",gap:32,flexWrap:"wrap"}}>
           <div><p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Total HT</p><p style={{fontFamily:'"Jost",sans-serif',fontSize:15,fontWeight:700,color:"#2a1e08"}}>{totalHT_b.toFixed(3)} TND</p></div>
           <div><p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>TVA 7%</p><p style={{fontFamily:'"Jost",sans-serif',fontSize:15,fontWeight:700,color:"#2a1e08"}}>{totalTVA.toFixed(3)} TND</p></div>
-          {userRole==="gerant"&&<div><p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Total TTC</p><p style={{fontFamily:'"Jost",sans-serif',fontSize:15,fontWeight:700,color:G2}}>{totalRev.toFixed(3)} TND</p></div>}
+          <div><p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>Total TTC</p><p style={{fontFamily:'"Jost",sans-serif',fontSize:15,fontWeight:700,color:G2}}>{totalRev.toFixed(3)} TND</p></div>
           {totalRev>0&&<div style={{flex:1,display:"flex",alignItems:"center",gap:10}}>
             <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#2a8a5a",fontWeight:600,whiteSpace:"nowrap"}}>Taux encaissement : {Math.round(totalEnc/totalRev*100)}%</p>
             <div style={{flex:1,height:6,background:"#e0d8cc",borderRadius:3,overflow:"hidden"}}>
