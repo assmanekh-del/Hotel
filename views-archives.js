@@ -1,9 +1,9 @@
-function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFacture,showToast,REFS}){
+function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFacture,showToast,REFS,userRole}){
   const [factures,setFactures]=React.useState([]);
   const [loading,setLoading]=React.useState(true);
   const [search,setSearch]=React.useState("");
   const [filterType,setFilterType]=React.useState("all");
-  const [filterMois,setFilterMois]=React.useState("");
+  const [filterMois,setFilterMois]=React.useState(userRole!=="gerant"?String(new Date().getMonth()+1).padStart(2,'0'):"");
   const [filterAnnee,setFilterAnnee]=React.useState("");
   const [filterMode,setFilterMode]=React.useState("all");
   const [modalFact,setModalFact]=React.useState(null);
@@ -120,7 +120,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
       ):(
         <div style={{background:"#fff",border:"1px solid #e8ddc8",borderRadius:10,overflow:"hidden",boxShadow:"0 2px 8px rgba(42,30,8,0.06)"}}>
           <div style={{padding:"11px 18px",borderBottom:"1px solid #f0e8d8",display:"grid",gridTemplateColumns:"120px 110px 1fr 120px 100px 130px 160px",gap:8,background:"#fef9f0"}}>
-            {["N° Facture","Date","Client","Type","Paiement","Montant TTC","Actions"].map(h=>(
+            {["N° Facture","Date","Client","Type","Paiement",...(userRole==="gerant"?["Montant TTC"]:[]),"Actions"].map(h=>(
               <p key={h} style={{fontFamily:'"Jost",sans-serif',fontSize:9,letterSpacing:1.5,color:"#8a7040",textTransform:"uppercase",fontWeight:600}}>{h}</p>
             ))}
           </div>
@@ -154,7 +154,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
                   <option value="virement">🏦 Virement</option>
                 </select>
               </div>
-              <p style={{fontFamily:'"Jost",sans-serif',fontSize:14,fontWeight:700,color:"#2a1e08",textAlign:"right"}}>{(f.montant_ttc||0).toFixed(3)}<span style={{fontSize:9,color:"#8a7040",marginLeft:2}}>TND</span></p>
+              {userRole==="gerant"&&<p style={{fontFamily:'"Jost",sans-serif',fontSize:14,fontWeight:700,color:"#2a1e08",textAlign:"right"}}>{(f.montant_ttc||0).toFixed(3)}<span style={{fontSize:9,color:"#8a7040",marginLeft:2}}>TND</span></p>}
               <div style={{display:"flex",gap:6,alignItems:"center"}}>
                 {f.annulee?(
                   <div style={{display:"flex",gap:6,flex:1}}>

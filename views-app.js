@@ -8,6 +8,7 @@ function App({user,onLogout}){
   const [modal,setModal]=useState(null);
   const [userRole,setUserRole]=useState(null);
   const [paiementModal,setPaiementModal]=useState(null);
+  const [showPetitDej,setShowPetitDej]=useState(false);
   const [cancelModal,setCancelModal]=useState(null); // {numero, type, onDone}
   const [showJournal,setShowJournal]=useState(false);
   const [logs,setLogs]=useState([]);
@@ -421,16 +422,19 @@ function App({user,onLogout}){
       /* Zone impression globale (facture/devis/bons) */
       #print-zone{display:block!important;background:#fff!important;position:absolute;top:0;left:0;width:210mm;min-height:auto;z-index:9999}
       #print-zone *{background-color:transparent}
-      #print-zone .print-a4{display:block!important;background:#fff!important;width:210mm;min-height:auto;padding:12mm 14mm;box-sizing:border-box;font-family:"Inter",Arial,sans-serif;font-size:10pt;color:#000;margin:0}
+      #print-zone .print-a4{display:block!important;background:#fff!important;width:210mm;min-height:297mm;padding:12mm 14mm;box-sizing:border-box;font-family:"Inter",Arial,sans-serif;font-size:10pt;color:#000;margin:0}
+      #print-zone ~ *{display:none!important}
       /* Zone impression dans modaux (facture réservation, facture libre, devis) */
       .print-only{display:none!important}
-      .print-only.print-a4{display:block!important;background:#fff!important;position:static;top:auto;left:auto;width:210mm;min-height:auto;padding:12mm 14mm;box-sizing:border-box;font-family:"Inter",Arial,sans-serif;font-size:10pt;color:#000;margin:0;z-index:9999}
+      .print-only.print-a4{display:block!important;background:#fff!important;position:static;top:auto;left:auto;width:210mm;min-height:297mm;padding:12mm 14mm;box-sizing:border-box;font-family:"Inter",Arial,sans-serif;font-size:10pt;color:#000;margin:0;z-index:9999}
       /* Eviter coupure sur éléments clés */
       table{page-break-inside:auto}
       tr{page-break-inside:avoid;page-break-after:auto}
       thead{display:table-header-group}
       tfoot{display:table-footer-group}
-      @page{size:A4 portrait;margin:10mm 14mm}
+      @page{size:A4 portrait;margin:0}
+      body{background:#fff!important}
+      body{background-color:#fff!important}
     }
     .print-only{display:none}
     .print-a4{display:none}
@@ -535,7 +539,7 @@ function App({user,onLogout}){
                 {label:"Chambres Occupées",value:occupiedRooms.length,total:"/20",color:"#1a4f8a",bg:"#d0e4f8"},
                 {label:"Chambres Libres",value:freeRooms.length,total:"/20",color:"#2d7a4f",bg:"#d4f0e0"},
                 {label:"En Attente",value:reservations.filter(r=>r.status==="pending").length,total:" résa",color:"#b07d1a",bg:"#fef3d0"},
-                {label:"Revenus payés",value:FMT(reservations.filter(r=>r.paid).reduce((a,r)=>a+getEffectivePrice(r),0)),total:"",color:"#c9952a",bg:"#fef3d0"},
+                ...(userRole==="gerant"?[{label:"Revenus payés",value:FMT(reservations.filter(r=>r.paid).reduce((a,r)=>a+getEffectivePrice(r),0)),total:"",color:"#c9952a",bg:"#fef3d0"}]:[]),
               ].map((s,i)=>(
                 <div key={i} className="stat-card" style={{borderTop:"3px solid "+s.color}}>
                   <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,letterSpacing:2,color:"#8a7040",textTransform:"uppercase",marginBottom:8,fontWeight:600}}>{s.label}</p>
@@ -634,9 +638,18 @@ function App({user,onLogout}){
                           <span style={{fontFamily:'"Jost",sans-serif',fontSize:11,fontWeight:600,color:"#c9952a"}}>{tot} pers.</span>
                         </div>
                       );})}
-                      {resPDJ.length>4&&<p style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#b0a070",marginTop:4}}>+{resPDJ.length-4} autres chambres</p>}
+                      {resPDJ.length>4&&(
+                        <button onClick={()=>setShowPetitDej(true)} style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#c9952a",marginTop:4,background:"none",border:"none",cursor:"pointer",padding:0,textDecoration:"underline"}}>
+                          +{resPDJ.length-4} autres chambres — voir tout
+                        </button>
+                      )}
                       {resPDJ.length===0&&<p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#b0a070",marginTop:4}}>Aucun petit-déjeuner demain</p>}
                     </div>
+                    {resPDJ.length>0&&resPDJ.length<=4&&(
+                      <button onClick={()=>setShowPetitDej(true)} style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#c9952a",marginTop:6,background:"none",border:"none",cursor:"pointer",padding:0,textDecoration:"underline"}}>
+                        Voir le détail complet →
+                      </button>
+                    )}
                   </div>
                 );
               })()}
@@ -646,7 +659,12 @@ function App({user,onLogout}){
               {(()=>{
                 return(<>
               <div className="card">
-                <h2 style={{fontSize:18,fontWeight:500,letterSpacing:1,marginBottom:18,color:"#c9952a"}}>Arrivées aujourd'hui</h2>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18}}>
+                  <h2 style={{fontSize:18,fontWeight:500,letterSpacing:1,color:"#c9952a"}}>Arrivées aujourd'hui</h2>
+                  <button onClick={()=>setShowPetitDej(true)} style={{fontFamily:'"Jost",sans-serif',fontSize:11,background:"#fff8ee",border:"1.5px solid #e8b84b",color:"#8a5c10",borderRadius:8,padding:"6px 12px",cursor:"pointer",fontWeight:700}}>
+                    🥐 Petit déjeuner
+                  </button>
+                </div>
                 {reservations.filter(r=>r.checkin===getToday()&&!["cancelled","blocked"].includes(r.status)).length===0
                   ?<p style={{fontFamily:'"Jost",sans-serif',fontSize:14,color:"#b0a070"}}>Aucune arrivée prévue</p>
                   :reservations.filter(r=>r.checkin===getToday()&&!["cancelled","blocked"].includes(r.status)).map(r=>{
@@ -840,6 +858,7 @@ function App({user,onLogout}){
 
           // Pour chaque chambre et chaque jour : trouver si occupée
           function getStatus(roomId, dateStr){
+            if(userRole!=="gerant"&&dateStr<TODAY) return null;
             const resDepart=reservations.find(r=>
               r.roomId===roomId&&
               ["confirmed","checkedin"].includes(r.status)&&
@@ -1176,7 +1195,7 @@ function App({user,onLogout}){
                       </div>
                     ))}
                   </div>
-                  <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+                  {userRole==="gerant"&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
                     {[
                       {k:"CA Total",v:bilan.revenus.toFixed(3),icon:"💰",c:"#2a1e08"},
                       {k:"Encaissé",v:bilan.encaisse.toFixed(3),icon:"✅",c:"#2d7a4f"},
@@ -1188,8 +1207,8 @@ function App({user,onLogout}){
                         <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,color:"#8a7040",marginTop:2}}>TND</p>
                       </div>
                     ))}
-                  </div>
-                  {bilan.revenus>0&&(
+                  </div>}
+                  {bilan.revenus>0&&userRole==="gerant"&&(
                     <div style={{marginTop:10,background:"rgba(255,255,255,0.5)",borderRadius:6,padding:"7px 12px"}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                         <span style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:color,fontWeight:600}}>
@@ -1243,7 +1262,7 @@ function App({user,onLogout}){
                         <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#c95050",fontWeight:600}}>✕ Annulée</p>
                       ):(
                         <>
-                          <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:600,color:r.paid?"#2d7a4f":"#2a1e08"}}>{FMT(getEffectivePrice(r))}</p>
+                          {userRole==="gerant"&&<p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:600,color:r.paid?"#2d7a4f":"#2a1e08"}}>{FMT(getEffectivePrice(r))}</p>}
                           <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:r.paid?"#2d7a4f":"#c95050"}}>{r.paid?"✓ payé":"en attente"}</p>
                         </>
                       )}
@@ -1271,7 +1290,7 @@ function App({user,onLogout}){
         })()}
 
         {/* ── ARCHIVES FACTURES ── */}
-        {view==="archives"&&<ArchivesView sb={sb} openDetail={openDetail} ROOMS={ROOMS} LOGO={LOGO} G2="#8B6434" doPrint={doPrint} setModal={setModal} restoreFacture={restoreFacture} showToast={showToast} REFS={REFS}/>}
+        {view==="archives"&&<ArchivesView sb={sb} openDetail={openDetail} ROOMS={ROOMS} LOGO={LOGO} G2="#8B6434" doPrint={doPrint} setModal={setModal} restoreFacture={restoreFacture} showToast={showToast} REFS={REFS} userRole={userRole}/>}
         {/* ══ MODAL MODE DE PAIEMENT ══ */}
         {paiementModal&&(()=>{
           const r=paiementModal.data;
@@ -3166,6 +3185,86 @@ function App({user,onLogout}){
         })(),document.body)}
 
     {/* ══ MODAL CONFIRMATION ANNULATION/SUPPRESSION FACTURE ══ */}
+    {/* ══ MODAL PETIT DÉJEUNER ══ */}
+    {showPetitDej&&ReactDOM.createPortal(
+      <div style={{position:"fixed",inset:0,background:"rgba(42,30,8,0.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,padding:20}} onClick={()=>setShowPetitDej(false)}>
+        <div style={{background:"#fff",borderRadius:12,padding:"28px 32px",maxWidth:600,width:"100%",maxHeight:"80vh",overflowY:"auto",boxShadow:"0 8px 40px rgba(42,30,8,0.18)"}} onClick={e=>e.stopPropagation()}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:14,borderBottom:"1px solid #f0e8d8"}}>
+            <div>
+              <p style={{fontSize:20,fontWeight:600,fontFamily:'"Cormorant Garamond",serif'}}>🥐 Petit déjeuner — {new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long"})}</p>
+              <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040",marginTop:2}}>
+                {(()=>{
+                  const list=reservations.filter(r=>
+                    ["confirmed","checkedin"].includes(r.status)&&
+                    r.checkin<=TODAY&&r.checkout>TODAY
+                  );
+                  const total=list.reduce((a,r)=>(r.breakfast!=="non"?a+(parseInt(r.adults)||1)+(parseInt(r.children)||0):a),0);
+                  return `${total} personne${total>1?"s":""}`;
+                })()}
+              </p>
+            </div>
+            <button onClick={()=>setShowPetitDej(false)} style={{background:"none",border:"none",fontSize:20,cursor:"pointer",color:"#8a7040"}}>✕</button>
+          </div>
+          {(()=>{
+            const now2=new Date();
+            const h2=now2.getHours();
+            const isPDJ2=h2>=6&&h2<11;
+            const presentsAujourd = reservations.filter(r=>
+              ["confirmed","checkedin","checkedout"].includes(r.status)&&
+              (isPDJ2 ? r.checkin<TODAY&&r.checkout>=TODAY : r.checkin<=TODAY&&r.checkout>TODAY)
+            );
+            const avecPetitDej = presentsAujourd;
+            const sansPetitDej = [];
+            return(
+              <>
+                {avecPetitDej.length===0&&(
+                  <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,color:"#b0a070",textAlign:"center",padding:20}}>Aucun client avec petit déjeuner aujourd'hui</p>
+                )}
+                {avecPetitDej.map(r=>{
+                  const room=ROOMS.find(rm=>rm.id===r.roomId);
+                  const nbPers=(parseInt(r.adults)||1)+(parseInt(r.children)||0);
+                  return(
+                    <div key={r.id} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"12px 0",borderBottom:"1px solid #f5efe5"}}>
+                      <div style={{display:"flex",gap:12,alignItems:"center"}}>
+                        <div style={{background:"#fef3d0",borderRadius:8,padding:"6px 10px",textAlign:"center",minWidth:48}}>
+                          <p style={{fontFamily:'"Jost",sans-serif',fontSize:16,fontWeight:700,color:"#c9952a"}}>{room?.number}</p>
+                          <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,color:"#8a7040"}}>{room?.type}</p>
+                        </div>
+                        <div>
+                          <p style={{fontSize:15,fontWeight:500}}>{r.guest}</p>
+                          <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040"}}>
+                            {nbPers} personne{nbPers>1?"s":""} · {r.pension==="dp"?"🍽 Demi-pension":"🥐 Petit déj."}
+                          </p>
+                        </div>
+                      </div>
+                      <div style={{textAlign:"right"}}>
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:700,color:"#c9952a"}}>{nbPers} pers.</p>
+                        <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#8a7040"}}>{new Date(r.checkout).toLocaleDateString("fr-FR")} départ</p>
+                      </div>
+                    </div>
+                  );
+                })}
+                {sansPetitDej.length>0&&(
+                  <div style={{marginTop:16,padding:"10px 14px",background:"#faf8f5",borderRadius:8,border:"1px solid #e8d8b0"}}>
+                    <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,fontWeight:700,color:"#8a7040",textTransform:"uppercase",letterSpacing:.8,marginBottom:8}}>Sans petit déjeuner ({sansPetitDej.length})</p>
+                    {sansPetitDej.map(r=>{
+                      const room=ROOMS.find(rm=>rm.id===r.roomId);
+                      return(
+                        <p key={r.id} style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#8a7040",marginBottom:4}}>
+                          Ch. {room?.number} — {r.guest}
+                        </p>
+                      );
+                    })}
+                  </div>
+                )}
+              </>
+            );
+          })()}
+        </div>
+      </div>,
+      document.body
+    )}
+
     {cancelModal&&ReactDOM.createPortal(
       <div style={{position:"fixed",inset:0,background:"rgba(42,30,8,0.5)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:9999,padding:20}} onClick={()=>setCancelModal(null)}>
         <div style={{background:"#fff",borderRadius:12,padding:"28px 32px",maxWidth:420,width:"100%",boxShadow:"0 8px 40px rgba(42,30,8,0.18)"}} onClick={e=>e.stopPropagation()}>
