@@ -1,4 +1,6 @@
 function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFacture,showToast,REFS,userRole}){
+  const isGerant = userRole==="gerant";
+  const AMTG = (n,s=" TND") => isGerant ? Number(n||0).toFixed(3)+s : "—";
   const [factures,setFactures]=React.useState([]);
   const [loading,setLoading]=React.useState(true);
   const [search,setSearch]=React.useState("");
@@ -104,7 +106,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
       <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:20}}>
         {[
           {label:"Documents",val:liste.length,color:"#c9952a",bg:"#fef9f0",border:"#e8d8b0"},
-          {label:"Total TTC",val:totalTTC.toFixed(3)+" TND",color:"#2a8a5a",bg:"#f0faf4",border:"#a0d8b8"},
+          {label:"Total TTC",val:isGerant?totalTTC.toFixed(3)+" TND":"—",color:"#2a8a5a",bg:"#f0faf4",border:"#a0d8b8"},
           {label:"Factures libres",val:liste.filter(f=>f.type==="libre").length,color:"#5a7fc8",bg:"#f0f4ff",border:"#c0cfee"},
         ].map(({label,val,color,bg,border})=>(
           <div key={label} style={{background:bg,border:"1.5px solid "+border,borderRadius:10,padding:"14px 18px"}}>
@@ -262,7 +264,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:20,paddingBottom:14,borderBottom:"1px solid #f0e8d8"}}>
                 <div>
                   <p style={{fontFamily:'"Cormorant Garamond",serif',fontSize:20,fontWeight:700,color:"#3a5fc8"}}>📊 Suivi des Factures</p>
-                  <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040",marginTop:2}}>{listeSuivi.length} facture{listeSuivi.length>1?"s":""} · Total TTC : {totalTTC.toFixed(3)} TND</p>
+                  <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a7040",marginTop:2}}>{listeSuivi.length} facture{listeSuivi.length>1?"s":""}{isGerant?" · Total TTC : "+totalTTC.toFixed(3)+" TND":""}</p>
                 </div>
                 <div style={{display:"flex",gap:8}}>
                   <button className="btn-ghost" onClick={()=>setShowSuivi(false)}>Fermer</button>
@@ -282,7 +284,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
               </div>
               {/* Résumé */}
               <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>
-                {[["Total HT",totalHT.toFixed(3),"#5a7fc8","#f0f4ff"],["TVA (7%)",totalTVA.toFixed(3),"#8a7040","#faf8f5"],["Total TTC",totalTTC.toFixed(3),"#2a8a5a","#f0faf4"]].map(([l,v,c,bg])=>(
+                {[["Total HT",isGerant?totalHT.toFixed(3):"—","#5a7fc8","#f0f4ff"],["TVA (7%)",isGerant?totalTVA.toFixed(3):"—","#8a7040","#faf8f5"],["Total TTC",isGerant?totalTTC.toFixed(3):"—","#2a8a5a","#f0faf4"]].map(([l,v,c,bg])=>(
                   <div key={l} style={{background:bg,borderRadius:8,padding:"10px 14px",border:"1px solid #e0d8cc"}}>
                     <p style={{fontFamily:'"Jost",sans-serif',fontSize:9,fontWeight:700,color:c,textTransform:"uppercase",letterSpacing:.8,marginBottom:3}}>{l}</p>
                     <p style={{fontFamily:'"Cormorant Garamond",serif',fontSize:18,fontWeight:700,color:"#2a1e08"}}>{v} <span style={{fontSize:11,color:"#8a7040"}}>TND</span></p>
@@ -307,9 +309,9 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
                         <td style={{padding:"7px 8px",color:"#8a7040",fontSize:10}}>{new Date(f.created_at).toLocaleDateString("fr-FR")}</td>
                         <td style={{padding:"7px 8px",fontWeight:700,color:"#c9952a",fontSize:10}}>{f.numero}</td>
                         <td style={{padding:"7px 8px",color:"#2c2416"}}>{f.client||"—"}</td>
-                        <td style={{padding:"7px 8px",textAlign:"right",color:"#6a5a45"}}>{(f.montant_ht||0).toFixed(3)}</td>
-                        <td style={{padding:"7px 8px",textAlign:"right",color:"#6a5a45"}}>{(f.tva||0).toFixed(3)}</td>
-                        <td style={{padding:"7px 8px",textAlign:"right",fontWeight:700,color:"#2c2416"}}>{(f.montant_ttc||0).toFixed(3)}</td>
+                        <td style={{padding:"7px 8px",textAlign:"right",color:"#6a5a45"}}>{isGerant?(f.montant_ht||0).toFixed(3):"—"}</td>
+                        <td style={{padding:"7px 8px",textAlign:"right",color:"#6a5a45"}}>{isGerant?(f.tva||0).toFixed(3):"—"}</td>
+                        <td style={{padding:"7px 8px",textAlign:"right",fontWeight:700,color:"#2c2416"}}>{isGerant?(f.montant_ttc||0).toFixed(3):"—"}</td>
                         <td style={{padding:"7px 8px",textAlign:"center",fontSize:10,color:"#8a7040"}}>{f.echeance?new Date(f.echeance+"T12:00:00").toLocaleDateString("fr-FR"):"—"}</td>
                         <td style={{padding:"7px 8px",textAlign:"center"}}>
                           <span style={{fontSize:9,background:f.paid?"#d4f0e0":"#fad4d4",color:f.paid?"#2d7a4f":"#9a2020",padding:"2px 7px",borderRadius:8,fontWeight:700}}>
@@ -335,9 +337,9 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
                     <tfoot>
                       <tr style={{background:"#8B6434"}}>
                         <td colSpan={3} style={{padding:"8px",fontWeight:700,color:"#fff",fontSize:11}}>TOTAL — {listeSuivi.length} facture{listeSuivi.length>1?"s":""}</td>
-                        <td style={{padding:"8px",textAlign:"right",fontWeight:700,color:"#fff"}}>{totalHT.toFixed(3)}</td>
-                        <td style={{padding:"8px",textAlign:"right",fontWeight:700,color:"#fff"}}>{totalTVA.toFixed(3)}</td>
-                        <td style={{padding:"8px",textAlign:"right",fontWeight:800,fontSize:13,color:"#fff"}}>{totalTTC.toFixed(3)}</td>
+                        <td style={{padding:"8px",textAlign:"right",fontWeight:700,color:"#fff"}}>{isGerant?totalHT.toFixed(3):"—"}</td>
+                        <td style={{padding:"8px",textAlign:"right",fontWeight:700,color:"#fff"}}>{isGerant?totalTVA.toFixed(3):"—"}</td>
+                        <td style={{padding:"8px",textAlign:"right",fontWeight:800,fontSize:13,color:"#fff"}}>{isGerant?totalTTC.toFixed(3):"—"}</td>
                         <td colSpan={2}></td>
                       </tr>
                     </tfoot>
@@ -514,7 +516,7 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
                     {/* Aperçu total */}
                     <div style={{display:"flex",justifyContent:"flex-end"}}>
                       <div style={{fontFamily:'"Jost",sans-serif',fontSize:12,minWidth:240,background:"#faf8f5",borderRadius:8,padding:"10px 14px",border:"1px solid #e0d8cc"}}>
-                        {[["Total HT",grandHT.toFixed(3)+" TND"],["TVA 7%",tvaAmt.toFixed(3)+" TND"]].map(([l,v])=>(
+                        {[["Total HT",isGerant?grandHT.toFixed(3)+" TND":"—"],["TVA 7%",isGerant?tvaAmt.toFixed(3)+" TND":"—"]].map(([l,v])=>(
                           <div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:4,color:"#6a5a45"}}><span>{l}</span><span style={{fontWeight:500}}>{v}</span></div>
                         ))}
                         {(parseFloat(ed.remise)||0)>0&&<div style={{display:"flex",justifyContent:"space-between",marginBottom:4,color:"#c95050"}}><span>Remise ({ed.remise}%)</span><span style={{fontWeight:600}}>− {remiseMont.toFixed(3)} TND</span></div>}
@@ -610,6 +612,8 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
 }
 
 function HistoriqueView({terminees,moisDispos,G2,openDetail,userRole}){
+  const isGerant = userRole==="gerant";
+  const AMTG = (n,s=" TND") => isGerant ? Number(n||0).toFixed(3)+s : "—";
   const currentMois=new Date().toISOString().slice(0,7);
   const [moisSel,setMoisSel]=React.useState(userRole!=="gerant"?(moisDispos.includes(currentMois)?currentMois:moisDispos[0]||""):moisDispos[0]||"");
   const [searchH,setSearchH]=React.useState("");
