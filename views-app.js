@@ -7,7 +7,7 @@ function App({user,onLogout}){
   const [syncing,setSyncing]=useState(false);
   const [modal,setModal]=useState(null);
   const [userRole,setUserRole]=useState(null);
-  const isGerant = userRole==="gerant";
+  const isGerant = userRole!=="receptionniste"; // null (chargement) ou "gerant" → affiche
   const AMT = (n,suffix=" TND") => isGerant ? Number(n||0).toFixed(3)+suffix : "—";
   const [paiementModal,setPaiementModal]=useState(null);
   const [showPetitDej,setShowPetitDej]=useState(false);
