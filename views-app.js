@@ -220,7 +220,13 @@ function App({user,onLogout}){
     </div>
   </div>
 </div>`;
-    doPrint(html);
+    const w=window.open("","_blank","width=900,height:1200");
+    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
+      @page{size:A4 portrait;margin:0}
+      body{margin:0;padding:0;background:#faf7f2;}
+      @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    </style></head><body>${html}<script>window.onload=()=>{window.print();}<\/script></body></html>\`);
+    w.document.close();
   }
 
 
