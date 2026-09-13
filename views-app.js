@@ -231,82 +231,76 @@ function App({user,onLogout}){
 
 
   function printEtatReservations(list){
-    const sourceLabel={direct:"Direct",booking:"Booking.com",expedia:"Expedia",agence:"Agence",autre:"Autre"};
-    const modeLabel={especes:"Espèces",carte:"Carte",cheque:"Chèque",virement:"Virement"};
-    const fmt=v=>Number(v||0).toFixed(3);
-    let totalNuits=0,totalMontant=0,totalPaye=0,totalReste=0;
-    const rows=list.map(r=>{
-      const room=ROOMS.find(x=>x.id===r.roomId);
-      const n=Math.max(1,Math.round((new Date(r.checkout)-new Date(r.checkin))/86400000));
-      const prixNuit=r.customPrice!==undefined?r.customPrice:(room?.price||0)+(r.pension==="dp"?40:0);
-      const total=Math.round((prixNuit*n+(r.extraBed?30*n:0))*1000)/1000;
-      const avance=Number(r.avance||0);
-      const reste=Math.max(0,Math.round((total-avance)*1000)/1000);
-      const paye=r.paid?total:avance;
+    var sourceLabel={direct:"Direct",booking:"Booking.com",expedia:"Expedia",agence:"Agence",autre:"Autre"};
+    var modeLabel={especes:"Especes",carte:"Carte",cheque:"Cheque",virement:"Virement"};
+    var fmt=function(v){return Number(v||0).toFixed(3);};
+    var totalNuits=0,totalMontant=0,totalPaye=0,totalReste=0;
+    var fmtD=function(d){return new Date(d+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});};
+    var rows=list.map(function(r){
+      var room=ROOMS.find(function(x){return x.id===r.roomId;});
+      var n=Math.max(1,Math.round((new Date(r.checkout)-new Date(r.checkin))/86400000));
+      var prixNuit=r.customPrice!==undefined?r.customPrice:(room?room.price:0)+(r.pension==="dp"?40:0);
+      var total=Math.round((prixNuit*n+(r.extraBed?30*n:0))*1000)/1000;
+      var avance=Number(r.avance||0);
+      var reste=Math.max(0,Math.round((total-avance)*1000)/1000);
+      var paye=r.paid?total:avance;
       totalNuits+=n; totalMontant+=total; totalPaye+=paye; totalReste+=reste;
-      const numRes=String(r.numero||"").padStart(6,"0");
-      const fmtD=d=>new Date(d+"T12:00:00").toLocaleDateString("fr-FR",{day:"2-digit",month:"2-digit",year:"numeric"});
-      const nbP=(r.adults||1)+(r.children||0);
-      return `<tr style="border-bottom:1px solid #f0e8d8;">
-        <td style="padding:5px 6px;font-size:9px;">${r.guest}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:center;">${numRes}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:center;">${fmtD(r.checkin)}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:center;">${fmtD(r.checkout)}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:center;">${n}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:center;">${nbP}</td>
-        <td style="padding:5px 6px;font-size:9px;">${room?.type||"—"}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:center;">${room?.number||"—"}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:right;">${fmt(prixNuit)}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:right;font-weight:700;">${fmt(total)}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:right;color:#2d7a4f;">${fmt(paye)}</td>
-        <td style="padding:5px 6px;font-size:9px;text-align:right;color:${reste>0?"#c95050":"#2d7a4f"};">${fmt(reste)}</td>
-        <td style="padding:5px 6px;font-size:9px;">${modeLabel[r.modePaiement||"especes"]||"—"}</td>
-        <td style="padding:5px 6px;font-size:9px;">${sourceLabel[r.source||"direct"]||"—"}</td>
-        <td style="padding:5px 6px;font-size:9px;color:#8a7040;">${r.notes||""}</td>
-      </tr>`;
+      var numRes=String(r.numero||"").padStart(6,"0");
+      var nbP=(r.adults||1)+(r.children||0);
+      var resteColor=reste>0?"#c95050":"#2d7a4f";
+      return "<tr style='border-bottom:1px solid #f0e8d8;'>"+
+        "<td style='padding:5px 6px;font-size:9px;'>"+r.guest+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:center;'>"+numRes+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:center;'>"+fmtD(r.checkin)+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:center;'>"+fmtD(r.checkout)+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:center;'>"+n+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:center;'>"+nbP+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;'>"+(room?room.type:"—")+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:center;'>"+(room?room.number:"—")+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:right;'>"+fmt(prixNuit)+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:right;font-weight:700;'>"+fmt(total)+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:right;color:#2d7a4f;'>"+fmt(paye)+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;text-align:right;color:"+resteColor+";'>"+fmt(reste)+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;'>"+(modeLabel[r.modePaiement||"especes"]||"—")+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;'>"+(sourceLabel[r.source||"direct"]||"—")+"</td>"+
+        "<td style='padding:5px 6px;font-size:9px;color:#8a7040;'>"+(r.notes||"")+"</td>"+
+        "</tr>";
     }).join("");
-    const today=new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
-    const html=`<div style="font-family:Arial,sans-serif;padding:10mm 8mm;width:297mm;min-height:210mm;box-sizing:border-box;">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #b5872a;padding-bottom:10px;">
-    <div>
-      <p style="font-size:18px;font-weight:900;letter-spacing:4px;color:#1a1208;margin:0;">IMPAVID HOTEL</p>
-      <p style="font-size:10px;color:#8a7040;margin:2px 0;">Rue Jamel Abdelnacer, Gabès · 75220856</p>
-    </div>
-    <div style="text-align:right;">
-      <p style="font-size:14px;font-weight:700;color:#b5872a;margin:0;">ÉTAT DES RÉSERVATIONS</p>
-      <p style="font-size:10px;color:#8a7040;margin:2px 0;">Imprimé le ${today}</p>
-      <p style="font-size:10px;color:#8a7040;margin:0;">${list.length} réservation${list.length>1?"s":""}</p>
-    </div>
-  </div>
-  <div style="overflow-x:auto;">
-  <table style="width:100%;border-collapse:collapse;font-size:9px;">
-    <thead>
-      <tr style="background:#b5872a;color:#fff;">
-        ${["Client","N° Rés.","Arrivée","Départ","Nuits","Pers.","Type","Ch.","Tarif/N","Total","Payé/Av.","Reste","Paiement","Source","Observations"].map(h=>`<th style="padding:6px 5px;text-align:left;font-size:8px;letter-spacing:0.5px;white-space:nowrap;">${h}</th>`).join("")}
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-    <tfoot>
-      <tr style="background:#f5ede0;font-weight:700;border-top:2px solid #b5872a;">
-        <td colspan="4" style="padding:7px 6px;font-size:9px;font-weight:700;">TOTAUX</td>
-        <td style="padding:7px 6px;font-size:9px;text-align:center;">${totalNuits}</td>
-        <td></td><td></td><td></td><td></td>
-        <td style="padding:7px 6px;font-size:10px;text-align:right;color:#1a1208;">${fmt(totalMontant)}</td>
-        <td style="padding:7px 6px;font-size:10px;text-align:right;color:#2d7a4f;">${fmt(totalPaye)}</td>
-        <td style="padding:7px 6px;font-size:10px;text-align:right;color:#c95050;">${fmt(totalReste)}</td>
-        <td colspan="3"></td>
-      </tr>
-    </tfoot>
-  </table>
-  </div>
-  <p style="text-align:center;font-size:8px;color:#8a7040;margin-top:14px;border-top:1px solid #e8d8b0;padding-top:8px;">
-    IMPAVID HOTEL · Rue Jamel Abdelnacer, Gabès · Tél: 75220856 · impavidhotel@gmail.com
-  </p>
-</div>`;
-    doPrint(html);
+    var today=new Date().toLocaleDateString("fr-FR",{day:"2-digit",month:"long",year:"numeric"});
+    var headers=["Client","N Res.","Arrivee","Depart","Nuits","Pers.","Type","Ch.","Tarif/N","Total","Paye/Av.","Reste","Paiement","Source","Observations"];
+    var ths=headers.map(function(h){return "<th style='padding:6px 5px;text-align:left;font-size:8px;white-space:nowrap;'>"+h+"</th>";}).join("");
+    var html="<div style='font-family:Arial,sans-serif;padding:10mm 8mm;width:297mm;min-height:210mm;box-sizing:border-box;'>"+
+      "<div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #b5872a;padding-bottom:10px;'>"+
+        "<div><p style='font-size:18px;font-weight:900;letter-spacing:4px;color:#1a1208;margin:0;'>IMPAVID HOTEL</p>"+
+        "<p style='font-size:10px;color:#8a7040;margin:2px 0;'>Rue Jamel Abdelnacer, Gabes - 75220856</p></div>"+
+        "<div style='text-align:right;'>"+
+          "<p style='font-size:14px;font-weight:700;color:#b5872a;margin:0;'>ETAT DES RESERVATIONS</p>"+
+          "<p style='font-size:10px;color:#8a7040;margin:2px 0;'>Imprime le "+today+"</p>"+
+          "<p style='font-size:10px;color:#8a7040;margin:0;'>"+list.length+" reservation"+(list.length>1?"s":"")+"</p>"+
+        "</div>"+
+      "</div>"+
+      "<table style='width:100%;border-collapse:collapse;font-size:9px;'>"+
+        "<thead><tr style='background:#b5872a;color:#fff;'>"+ths+"</tr></thead>"+
+        "<tbody>"+rows+"</tbody>"+
+        "<tfoot><tr style='background:#f5ede0;font-weight:700;border-top:2px solid #b5872a;'>"+
+          "<td colspan='4' style='padding:7px 6px;font-size:9px;font-weight:700;'>TOTAUX</td>"+
+          "<td style='padding:7px 6px;font-size:9px;text-align:center;'>"+totalNuits+"</td>"+
+          "<td></td><td></td><td></td><td></td>"+
+          "<td style='padding:7px 6px;font-size:10px;text-align:right;color:#1a1208;'>"+fmt(totalMontant)+"</td>"+
+          "<td style='padding:7px 6px;font-size:10px;text-align:right;color:#2d7a4f;'>"+fmt(totalPaye)+"</td>"+
+          "<td style='padding:7px 6px;font-size:10px;text-align:right;color:#c95050;'>"+fmt(totalReste)+"</td>"+
+          "<td colspan='3'></td>"+
+        "</tr></tfoot>"+
+      "</table>"+
+      "<p style='text-align:center;font-size:8px;color:#8a7040;margin-top:14px;border-top:1px solid #e8d8b0;padding-top:8px;'>"+
+        "IMPAVID HOTEL - Rue Jamel Abdelnacer, Gabes - Tel: 75220856 - impavidhotel@gmail.com"+
+      "</p></div>";
+    var w=window.open("","_blank","width=1100,height=800");
+    w.document.write("<!DOCTYPE html><html><head><meta charset='UTF-8'/><style>@page{size:A4 landscape;margin:0}body{margin:0;padding:0}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body>"+html+"<script>window.onload=function(){window.print();}<\/script></body></html>");
+    w.document.close();
   }
 
-  // Fermeture intelligente — annule le numéro réservé si non sauvegardé
+    // Fermeture intelligente — annule le numéro réservé si non sauvegardé
   async function closeModal(){
     if(modal){
       const type=modal.type;
