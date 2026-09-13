@@ -220,12 +220,9 @@ function App({user,onLogout}){
     </div>
   </div>
 </div>`;
-    const w=window.open("","_blank","width=900,height:1200");
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>
-      @page{size:A4 portrait;margin:0}
-      body{margin:0;padding:0;background:#faf7f2;}
-      @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-    </style></head><body>${html}<script>window.onload=()=>{window.print();}<\/script></body></html>\`);
+    var w=window.open("","_blank","width=900,height=1200");
+    var css2="@page{size:A4 portrait;margin:0}body{margin:0;padding:0;background:#faf7f2;}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}";
+    w.document.write("<!DOCTYPE html><html><head><meta charset='UTF-8'/><style>"+css2+"</style></head><body>"+html+"<script>window.onload=function(){window.print();}<\/script></body></html>");
     w.document.close();
   }
 
