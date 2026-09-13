@@ -334,7 +334,7 @@ function App({user,onLogout}){
       sb.from('profiles').select('role').eq('id',user.id).maybeSingle()
         .then(({data,error})=>{
           if(error) console.error('Role error:',error);
-          setUserRole(data?.role||'gerant'); // défaut gérant si profil manquant
+          setUserRole(data?.role||'receptionniste'); // défaut réceptionniste si profil manquant
         });
     }
   },[user]);
