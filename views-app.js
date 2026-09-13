@@ -655,13 +655,11 @@ function App({user,onLogout}){
             ["archives","📁","Archives"],
             ["groupes","🏢","Groupes"],
             ["clients-societes","📋","Fichier Clients"],
-            ["rh","👥","RH & Salaires"],
+
             ["police","📋","Livre de Police"],
             ["contrats","🤝","Contrats"],
             ["charges","💸","Charges"],
-            ["menage","🧹","Ménage"],
-            ["linge","🧺","Linge"],
-            ["resources","👥","Ressources"],
+
           ].map(([v,icon,l])=>(
             <button key={v} className={"nav-btn "+(view===v?"active":"")} onClick={()=>setView(v)}>
               <span style={{fontSize:15,flexShrink:0}}>{icon}</span>
