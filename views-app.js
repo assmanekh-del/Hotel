@@ -674,7 +674,7 @@ function App({user,onLogout}){
             {syncing?"Synchronisation...":"Connecté"}
           </span>
           <div style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#8a7040",marginBottom:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{user?.email}</div>
-          {userRole&&!["receptionniste","Receptionniste"].includes(userRole)&&(
+          {isGerant&&(
             <button onClick={()=>{setShowJournal(true);loadLogs();}} style={{width:"100%",background:"#f0f4ff",border:"1px solid #c0cfee",color:"#3a5fc8",borderRadius:6,padding:"7px 0",fontSize:11,fontFamily:'"Jost",sans-serif',fontWeight:600,cursor:"pointer",letterSpacing:.5,marginBottom:6}}>
               📋 Journal d'activité
             </button>
@@ -717,7 +717,7 @@ function App({user,onLogout}){
                 {label:"Chambres Occupées",value:occupiedRooms.length,total:"/20",color:"#1a4f8a",bg:"#d0e4f8"},
                 {label:"Chambres Libres",value:freeRooms.length,total:"/20",color:"#2d7a4f",bg:"#d4f0e0"},
                 {label:"En Attente",value:reservations.filter(r=>r.status==="pending").length,total:" résa",color:"#b07d1a",bg:"#fef3d0"},
-                ...(userRole&&!["receptionniste","Receptionniste"].includes(userRole)?[{label:"Revenus payés",value:FMT(reservations.filter(r=>r.paid).reduce((a,r)=>a+getEffectivePrice(r),0)),total:"",color:"#c9952a",bg:"#fef3d0"}]:[]),
+                ...(isGerant?[{label:"Revenus payés",value:FMT(reservations.filter(r=>r.paid).reduce((a,r)=>a+getEffectivePrice(r),0)),total:"",color:"#c9952a",bg:"#fef3d0"}]:[]),
               ].map((s,i)=>(
                 <div key={i} className="stat-card" style={{borderTop:"3px solid "+s.color}}>
                   <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,letterSpacing:2,color:"#8a7040",textTransform:"uppercase",marginBottom:8,fontWeight:600}}>{s.label}</p>
@@ -1388,7 +1388,7 @@ function App({user,onLogout}){
                       </div>
                     ))}
                   </div>
-                  {userRole&&!["receptionniste","Receptionniste"].includes(userRole)&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+                  {isGerant&&<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
                     {[
                       {k:"CA Total",v:bilan.revenus.toFixed(3),icon:"💰",c:"#2a1e08"},
                       {k:"Encaissé",v:bilan.encaisse.toFixed(3),icon:"✅",c:"#2d7a4f"},
@@ -1401,7 +1401,7 @@ function App({user,onLogout}){
                       </div>
                     ))}
                   </div>}
-                  {bilan.revenus>0&&userRole&&!["receptionniste","Receptionniste"].includes(userRole)&&(
+                  {bilan.revenus>0&&isGerant&&(
                     <div style={{marginTop:10,background:"rgba(255,255,255,0.5)",borderRadius:6,padding:"7px 12px"}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
                         <span style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:color,fontWeight:600}}>
@@ -1455,7 +1455,7 @@ function App({user,onLogout}){
                         <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:"#c95050",fontWeight:600}}>✕ Annulée</p>
                       ):(
                         <>
-                          {userRole&&!["receptionniste","Receptionniste"].includes(userRole)&&<p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:600,color:r.paid?"#2d7a4f":"#2a1e08"}}>{FMT(getEffectivePrice(r))}</p>}
+                          {isGerant&&<p style={{fontFamily:'"Jost",sans-serif',fontSize:13,fontWeight:600,color:r.paid?"#2d7a4f":"#2a1e08"}}>{FMT(getEffectivePrice(r))}</p>}
                           <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:r.paid?"#2d7a4f":r.avance>0?"#c9952a":"#c95050"}}>
                             {r.paid?"✓ payé":r.avance>0?"⟳ avance":"en attente"}
                           </p>
@@ -2845,7 +2845,7 @@ function App({user,onLogout}){
                   ):(
                     <div style={{display:"flex",alignItems:"center",gap:8}}>
                       <span style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#2a8a5a",fontWeight:700}}>✓ F-{modal.invNum}</span>
-                      {userRole&&!["receptionniste","Receptionniste"].includes(userRole)&&(
+                      {isGerant&&(
                         <button className="btn-red" style={{fontSize:11,padding:"5px 12px"}} onClick={()=>{
                           setCancelModal({numero:'F-'+modal.invNum,onDone:()=>{setModal(m=>({...m,saved:false,invNum:undefined}));showToast('Facture annulée','error');}});
                         }}>✕ Annuler</button>
@@ -3023,7 +3023,7 @@ function App({user,onLogout}){
                     ):(
                       <div style={{display:"flex",alignItems:"center",gap:8}}>
                         <span style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#2a8a5a",fontWeight:700}}>✓ {di.devNum}</span>
-                        {userRole&&!["receptionniste","Receptionniste"].includes(userRole)&&(
+                        {isGerant&&(
                           <button className="btn-red" style={{fontSize:11,padding:"5px 12px"}} onClick={()=>{
                             setCancelModal({numero:di.devNum,onDone:()=>{setDI(f=>({...f,saved:false}));showToast('Devis annulé','error');}});
                           }}>✕ Annuler</button>
