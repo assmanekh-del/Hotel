@@ -881,7 +881,7 @@ function App({user,onLogout}){
                             <p style={{fontSize:16,fontWeight:500}}>{r.guest}</p>
                             {r.claim&&<span style={{fontFamily:'"Jost",sans-serif',fontSize:11,background:"#fad4d4",color:"#9a2020",padding:"2px 8px",borderRadius:10}}>⚠</span>}
                           </div>
-                          <p style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#8a7040"}}>Ch. {room?.number}{isGerant&&" · "+FMT(getEffectivePrice(r))}</p>
+                          <p style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#8a7040"}}>Ch. {room?.number} · {FMT(getEffectivePrice(r))}</p>
                         </div>
                         <span className="badge" style={{background:r.paid?"#d4f0e0":"#fad4d4",color:r.paid?"#2d7a4f":"#9a2020"}}>{r.paid?"✓ Payé":"À encaisser"}</span>
                       </div>
@@ -999,7 +999,7 @@ function App({user,onLogout}){
                           <span style={{fontFamily:'"Jost",sans-serif',fontSize:8,color:"#b0a080",fontStyle:"italic"}}>{room.bedType}</span>
                           {!hasSearchDates&&res&&<span style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:isBlocked?"#9b5de5":isCI?"#1a4f8a":"#c9952a"}}>{isBlocked?"Bloquée":res.guest.split(" ")[0]}</span>}
                           {!hasSearchDates&&res?.assignedMenage&&<span style={{fontFamily:'"Jost",sans-serif',fontSize:9,color:"#8a7040"}}>🧹 {res.assignedMenage}</span>}
-                          {isGerant&&<span style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#b0a070"}}>{room.price} TND</span>}
+                          <span style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#b0a070"}}>{room.price} TND</span>
                           {/* Bouton réserver avec dates pré-remplies */}
                           {!isBlocked&&(libreSearch||(!hasSearchDates&&!occToday))&&(
                             <div style={{display:"flex",gap:4,marginTop:4}}>
@@ -1464,7 +1464,7 @@ function App({user,onLogout}){
                           <p style={{fontFamily:'"Jost",sans-serif',fontSize:11,color:r.paid?"#2d7a4f":r.avance>0?"#c9952a":"#c95050"}}>
                             {r.paid?"✓ payé":r.avance>0?"⟳ avance":"en attente"}
                           </p>
-                          {isGerant&&r.avance>0&&!r.paid&&(
+                          {r.avance>0&&!r.paid&&(
                             <p style={{fontFamily:'"Jost",sans-serif',fontSize:10,color:"#8a7040"}}>
                               Reste: {Math.max(0,(()=>{const rm=ROOMS.find(x=>x.id===r.roomId);const n=Math.max(1,Math.round((new Date(r.checkout)-new Date(r.checkin))/86400000));const p=r.customPrice!==undefined?r.customPrice:(rm?.price||0)*(1+(r.pension==="dp"?40/rm?.price||0:0));return p*n;})()-Number(r.avance||0)).toFixed(3)} TND
                             </p>
@@ -1993,7 +1993,7 @@ function App({user,onLogout}){
                     <option value="">Sélectionner une chambre</option>
                     {[1,2,3,4].map(floor=>(
                       <optgroup key={floor} label={"── Étage "+floor}>
-                        {ROOMS.filter(r=>r.floor===floor).map(r=>{const occ=isOccForDates(r.id,reservations,form.checkin,form.checkout,form.id);return <option key={r.id} value={r.id} disabled={occ}>{r.number} — {r.type}{isGerant?" ("+r.price+" TND/nuit)":""}{occ?" [Occupée ces dates]":""}</option>;})}
+                        {ROOMS.filter(r=>r.floor===floor).map(r=>{const occ=isOccForDates(r.id,reservations,form.checkin,form.checkout,form.id);return <option key={r.id} value={r.id} disabled={occ}>{r.number} — {r.type} ({r.price} TND/nuit){occ?" [Occupée ces dates)":""}</option>;})}
                       </optgroup>
                     ))}
                   </select>
@@ -2511,24 +2511,24 @@ function App({user,onLogout}){
                     {(r.billingType&&r.billingType!==typeMap_D[room?.type]||remise_D>0||r.pension==="dp"||r.customPrice!==undefined)&&(
                       <div style={{marginBottom:10,padding:"6px 10px",background:"#fef3d0",borderRadius:6,fontFamily:'"Jost",sans-serif',fontSize:11,color:"#8a5c10",display:"flex",flexWrap:"wrap",gap:8}}>
                         {r.billingType&&r.billingType!==defaultType_D&&<span>📋 Facturé en <strong>{r.billingType}</strong></span>}
-                        {r.pension==="dp"&&<span>🍽 Demi-Pension{isGerant?" (+40 TND)":""}</span>}
-                        {remise_D>0&&<span>🏷 Remise <strong>{remise_D}%</strong>{isGerant?" (−"+Math.round(prixBase_D*remise_D/100*100)/100+" TND/nuit)":""}</span>}
-                        {isGerant&&r.customPrice!==undefined&&<span>✏️ Prix manuel : <strong>{r.customPrice} TND/nuit</strong></span>}
+                        {r.pension==="dp"&&<span>🍽 Demi-Pension (+40 TND)</span>}
+                        {remise_D>0&&<span>🏷 Remise <strong>{remise_D}%</strong> (−{Math.round(prixBase_D*remise_D/100*100)/100} TND/nuit)</span>}
+                        {r.customPrice!==undefined&&<span>✏️ Prix manuel : <strong>{r.customPrice} TND/nuit</strong></span>}
                       </div>
                     )}
                     {[
-                      isGerant?["Chambre HT",baseHT.toFixed(3)+" TND"]:null,
-                      isGerant&&r.extraBed?["Lit suppl. HT",extraLineHT.toFixed(3)+" TND"]:null,
-                      isGerant?["TVA 7%",tvaAmt.toFixed(3)+" TND"]:null,
+                      ["Chambre HT",baseHT.toFixed(3)+" TND"],
+                      r.extraBed?["Lit suppl. HT",extraLineHT.toFixed(3)+" TND"]:null,
+                      ["TVA 7%",tvaAmt.toFixed(3)+" TND"],
                     ].filter(Boolean).map(([l,v])=>(
                       <div key={l} style={{display:"flex",justifyContent:"space-between",marginBottom:6,fontFamily:'"Jost",sans-serif',fontSize:12,color:"#6a5530"}}><span>{l}</span><span>{v}</span></div>
                     ))}
                     <div style={{borderTop:"1px solid #e8d8b0",paddingTop:10,marginTop:4}}>
                       <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
                         <span style={{fontFamily:'"Jost",sans-serif',fontSize:14,color:"#6a5530",fontWeight:600}}>Total TTC</span>
-                        {isGerant&&<span style={{fontSize:18,fontWeight:700,color:"#2a1e08"}}>{totalTTC.toFixed(3)} TND</span>}
+                        <span style={{fontSize:18,fontWeight:700,color:"#2a1e08"}}>{totalTTC.toFixed(3)} TND</span>
                       </div>
-                      {isGerant&&(r.avance>0)&&(
+                      {(r.avance>0)&&(
                         <div style={{background:"#f0faf5",border:"1px solid #a0d8b8",borderRadius:8,padding:"8px 12px",marginTop:6}}>
                           <div style={{display:"flex",justifyContent:"space-between",marginBottom:4}}>
                             <span style={{fontFamily:'"Jost",sans-serif',fontSize:12,color:"#2d7a4f"}}>✅ Avance reçue</span>

@@ -309,9 +309,9 @@ function ArchivesView({sb,openDetail,ROOMS,LOGO,G2,doPrint,setModal,restoreFactu
                         <td style={{padding:"7px 8px",color:"#8a7040",fontSize:10}}>{new Date(f.created_at).toLocaleDateString("fr-FR")}</td>
                         <td style={{padding:"7px 8px",fontWeight:700,color:"#c9952a",fontSize:10}}>{f.numero}</td>
                         <td style={{padding:"7px 8px",color:"#2c2416"}}>{f.client||"—"}</td>
-                        <td style={{padding:"7px 8px",textAlign:"right",color:"#6a5a45"}}>{isGerant?(f.montant_ht||0).toFixed(3):"—"}</td>
-                        <td style={{padding:"7px 8px",textAlign:"right",color:"#6a5a45"}}>{isGerant?(f.tva||0).toFixed(3):"—"}</td>
-                        <td style={{padding:"7px 8px",textAlign:"right",fontWeight:700,color:"#2c2416"}}>{isGerant?(f.montant_ttc||0).toFixed(3):"—"}</td>
+                        <td style={{padding:"7px 8px",textAlign:"right",color:"#6a5a45"}}>{(f.montant_ht||0).toFixed(3)}</td>
+                        <td style={{padding:"7px 8px",textAlign:"right",color:"#6a5a45"}}>{(f.tva||0).toFixed(3)}</td>
+                        <td style={{padding:"7px 8px",textAlign:"right",fontWeight:700,color:"#2c2416"}}>{(f.montant_ttc||0).toFixed(3)}</td>
                         <td style={{padding:"7px 8px",textAlign:"center",fontSize:10,color:"#8a7040"}}>{f.echeance?new Date(f.echeance+"T12:00:00").toLocaleDateString("fr-FR"):"—"}</td>
                         <td style={{padding:"7px 8px",textAlign:"center"}}>
                           <span style={{fontSize:9,background:f.paid?"#d4f0e0":"#fad4d4",color:f.paid?"#2d7a4f":"#9a2020",padding:"2px 7px",borderRadius:8,fontWeight:700}}>
